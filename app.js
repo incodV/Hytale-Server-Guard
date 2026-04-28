@@ -1,14 +1,9 @@
 let reports = [];
 let currentUser = null;
 let userSessionToken = "";
-let isAdmin = false;
-let isViewingAdmin = false;
-let adminAuth = null;
-
 const STORAGE_KEYS = {
     localReports: "hytaleguard_reports",
-    userSession: "hytaleguard_user_session",
-    adminAuth: "hytaleguard_admin_auth"
+    userSession: "hytaleguard_user_session"
 };
 
 const API = {
@@ -45,13 +40,6 @@ function loadStoredSessions() {
         userSessionToken = "";
     }
 
-    try {
-        adminAuth = JSON.parse(localStorage.getItem(STORAGE_KEYS.adminAuth) || "null");
-        isAdmin = Boolean(adminAuth?.username && adminAuth?.password);
-    } catch (error) {
-        adminAuth = null;
-        isAdmin = false;
-    }
 }
 
 async function loadData() {
@@ -100,24 +88,12 @@ async function refreshUI(filteredData = null) {
     updateHeroMetrics();
     renderReports(filteredData);
     renderAccountArea();
-
-    if (isAdmin) {
-        await loadAdminReports();
-    } else {
-        toggleAdminView(false);
-    }
 }
 
 function updateHeaderState() {
-    const loginBtn = document.getElementById("loginBtn");
     const accountBtn = document.getElementById("accountBtn");
-    const adminNavLink = document.getElementById("adminNavLink");
     const accountActionBtn = document.getElementById("accountActionBtn");
     const accountIntro = document.getElementById("accountIntro");
-
-    if (loginBtn) {
-        loginBtn.textContent = isAdmin ? `Sair (${adminAuth.username})` : "Admin Login";
-    }
 
     if (accountBtn) {
         accountBtn.textContent = currentUser ? `${t("nav_account")}: ${currentUser.name}` : t("account_login_create");
@@ -125,10 +101,6 @@ function updateHeaderState() {
 
     if (accountActionBtn) {
         accountActionBtn.textContent = currentUser ? t("account_refresh") : t("account_create");
-    }
-
-    if (adminNavLink) {
-        adminNavLink.hidden = !isAdmin;
     }
 
     if (currentUser) {
@@ -150,29 +122,7 @@ function updateHeroMetrics() {
     document.getElementById("heroMemberCount").textContent = members || 0;
 }
 
-function toggleAdminView(show) {
-    if (!isAdmin && show) {
-        return;
-    }
-
-    isViewingAdmin = show;
-    const publicView = document.getElementById("publicView");
-    const adminPanel = document.getElementById("adminPanel");
-
-    if (publicView) {
-        publicView.hidden = show;
-    }
-
-    if (adminPanel) {
-        adminPanel.hidden = !show;
-    }
-}
-
 function renderReports(dataToRender = null) {
-    if (isViewingAdmin) {
-        return;
-    }
-
     const grid = document.getElementById("reportsGrid");
     if (!grid) {
         return;
@@ -221,48 +171,6 @@ function renderReports(dataToRender = null) {
             `;
         })
         .join("");
-}
-
-function renderAdminPanel() {
-    const tableBody = document.getElementById("adminTableBody");
-    if (!tableBody) {
-        return;
-    }
-
-    const sortedReports = [...reports].sort(sortByNewest);
-    document.getElementById("statPending").textContent = sortedReports.filter((report) => report.status === "Em análise").length;
-    document.getElementById("statApproved").textContent = sortedReports.filter((report) => report.status === "Aprovado").length;
-    document.getElementById("statTotal").textContent = sortedReports.length;
-
-    if (sortedReports.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="5">${escapeHtml(t("admin_no_reports"))}</td></tr>`;
-        return;
-    }
-
-    tableBody.innerHTML = sortedReports.map((report) => `
-        <tr>
-            <td>
-                <div class="report-identity">
-                    ${buildAvatarMarkup(report)}
-                    <div>
-                        <strong>${escapeHtml(report.playerName)}</strong><br>
-                        <small>${escapeHtml(report.uuid || t("uuid_missing"))}</small>
-                    </div>
-                </div>
-            </td>
-            <td>${escapeHtml(report.server)}</td>
-            <td><span class="status-badge ${getStatusClass(report.status)}">${escapeHtml(report.status)}</span></td>
-            <td>${formatDate(report.createdAt)}</td>
-            <td>
-                <div class="admin-table-actions">
-                    <button class="btn-view" type="button" data-action="view" data-id="${report.id}">${escapeHtml(t("action_view"))}</button>
-                    ${report.status !== "Aprovado" ? `<button class="btn-approve" type="button" data-action="approve" data-id="${report.id}">${escapeHtml(t("action_approve"))}</button>` : ""}
-                    ${report.status !== "Rejeitado" ? `<button class="btn-reject" type="button" data-action="reject" data-id="${report.id}">${escapeHtml(t("action_reject"))}</button>` : ""}
-                    <button class="btn-delete" type="button" data-action="delete" data-id="${report.id}">${escapeHtml(t("action_delete"))}</button>
-                </div>
-            </td>
-        </tr>
-    `).join("");
 }
 
 function renderAccountArea() {
@@ -358,10 +266,6 @@ async function loadMyReports() {
 }
 
 function handleSearch(query) {
-    if (isViewingAdmin) {
-        return;
-    }
-
     const normalizedQuery = normalizeText(query);
     if (!normalizedQuery) {
         renderReports();
@@ -612,101 +516,22 @@ async function handleAdminLogin(event) {
         return;
     }
 
-    adminAuth = { username, password };
-    isAdmin = true;
-    localStorage.setItem(STORAGE_KEYS.adminAuth, JSON.stringify(adminAuth));
-
-    if (canUseBackend()) {
-        const response = await safeFetchJson(API.adminReports, {
-            headers: adminHeaders()
-        });
-
-        if (!response?.ok) {
-            isAdmin = false;
-            adminAuth = null;
-            localStorage.removeItem(STORAGE_KEYS.adminAuth);
-            showFeedback(feedback, response?.error || t("feedback_admin_invalid"), "error");
-            return;
-        }
-    }
-
-    showFeedback(feedback, t("feedback_admin_success"), "success");
-    await refreshUI();
-    toggleAdminView(true);
-    closeModal("loginModal");
-}
-
-function toggleAdmin() {
-    if (isAdmin) {
-        isAdmin = false;
-        isViewingAdmin = false;
-        adminAuth = null;
-        localStorage.removeItem(STORAGE_KEYS.adminAuth);
-        refreshUI();
+    if (!canUseBackend()) {
+        showFeedback(feedback, t("feedback_admin_invalid"), "error");
         return;
     }
 
-    openModal("loginModal");
-}
+    const response = await safeFetchJson(API.adminReports, {
+        headers: { "x-admin-user": username, "x-admin-pass": password }
+    });
 
-async function loadAdminReports() {
-    if (!isAdmin) {
+    if (!response?.ok) {
+        showFeedback(feedback, response?.error || t("feedback_admin_invalid"), "error");
         return;
     }
 
-    if (canUseBackend()) {
-        const response = await safeFetchJson(API.adminReports, {
-            headers: adminHeaders()
-        });
-
-        if (response?.ok) {
-            reports = normalizeReports(response.reports);
-        }
-    }
-
-    renderAdminPanel();
-}
-
-async function updateStatus(id, status) {
-    if (canUseBackend() && isAdmin) {
-        const response = await safeFetchJson(API.adminUpdate, {
-            method: "POST",
-            headers: {
-                ...jsonHeaders(),
-                ...adminHeaders()
-            },
-            body: JSON.stringify({ id, status })
-        });
-
-        if (response?.ok) {
-            await loadData();
-            await refreshUI();
-        }
-        return;
-    }
-}
-
-async function deleteReport(id) {
-    if (!window.confirm("Excluir permanentemente esta denúncia?")) {
-        return;
-    }
-
-    if (canUseBackend() && isAdmin) {
-        const response = await safeFetchJson(API.adminDelete, {
-            method: "POST",
-            headers: {
-                ...jsonHeaders(),
-                ...adminHeaders()
-            },
-            body: JSON.stringify({ id })
-        });
-
-        if (response?.ok) {
-            await loadData();
-            await refreshUI();
-        }
-        return;
-    }
+    localStorage.setItem("hytaleguard_admin_auth", JSON.stringify({ username, password }));
+    window.location.href = "admin.html";
 }
 
 function viewReportDetails(id) {
@@ -775,7 +600,6 @@ function viewReportDetails(id) {
 function setupEventListeners() {
     bindIfExists("searchInput", "input", (event) => handleSearch(event.target.value));
     bindIfExists("btnOpenReport", "click", () => openModal("reportModal"));
-    bindIfExists("loginBtn", "click", toggleAdmin);
     bindIfExists("accountBtn", "click", () => openModal("accountModal"));
     bindIfExists("accountActionBtn", "click", () => currentUser ? loadMyReports() : openModal("accountModal"));
     bindIfExists("openRegisterModalBtn", "click", () => {
@@ -786,20 +610,10 @@ function setupEventListeners() {
         closeModal("accountModal");
         openModal("loginModal");
     });
-    bindIfExists("btnBackToSite", "click", () => {
-        isViewingAdmin = false;
-        toggleAdminView(false);
-        renderReports();
-    });
     bindIfExists("reportForm", "submit", submitReport);
     bindIfExists("loginForm", "submit", handleAdminLogin);
     bindIfExists("registerForm", "submit", handleRegister);
     bindIfExists("userLoginForm", "submit", handleUserLogin);
-    bindIfExists("adminNavLink", "click", (event) => {
-        event.preventDefault();
-        toggleAdminView(true);
-        renderAdminPanel();
-    });
 
     document.querySelectorAll("[data-close-modal]").forEach((button) => {
         button.addEventListener("click", closeModals);
@@ -811,24 +625,6 @@ function setupEventListeners() {
                 closeModals();
             }
         });
-    });
-
-    bindIfExists("adminTableBody", "click", (event) => {
-        const actionButton = event.target.closest("button[data-action]");
-        if (!actionButton) {
-            return;
-        }
-
-        const { action, id } = actionButton.dataset;
-        if (action === "view") {
-            viewReportDetails(id);
-        } else if (action === "approve") {
-            updateStatus(id, "Aprovado");
-        } else if (action === "reject") {
-            updateStatus(id, "Rejeitado");
-        } else if (action === "delete") {
-            deleteReport(id);
-        }
     });
 
     document.addEventListener("keydown", (event) => {
@@ -953,10 +749,6 @@ function jsonHeaders() {
 
 function authHeaders() {
     return userSessionToken ? { authorization: `Bearer ${userSessionToken}` } : {};
-}
-
-function adminHeaders() {
-    return adminAuth ? { "x-admin-user": adminAuth.username, "x-admin-pass": adminAuth.password } : {};
 }
 
 function getStatusClass(status) {

@@ -611,6 +611,35 @@ section {
     margin-bottom: 26px;
 }
 
+.admin-page {
+    padding-bottom: 72px;
+}
+
+.admin-login-shell {
+    min-height: calc(100svh - var(--header-height));
+    display: flex;
+    align-items: center;
+}
+
+.admin-login-card {
+    max-width: 620px;
+    margin: 0 auto;
+    padding: 34px;
+    border: 1px solid rgba(240, 226, 193, 0.1);
+    background: linear-gradient(180deg, rgba(21, 28, 36, 0.92), rgba(14, 19, 26, 0.94));
+    box-shadow: var(--shadow);
+}
+
+.admin-login-card h1 {
+    margin-top: 10px;
+    font-family: var(--font-display);
+    font-size: clamp(2.2rem, 4vw, 3.6rem);
+}
+
+.admin-standalone-form {
+    margin-top: 24px;
+}
+
 .stat-card {
     padding: 24px;
 }

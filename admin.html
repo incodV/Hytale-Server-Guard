@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hytale-Server-Guard | Painel Admin</title>
+    <meta name="robots" content="noindex,nofollow">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container">
+            <nav>
+                <a href="index.html" class="logo">Hytale-Server-<span>Guard</span></a>
+                <div class="nav-actions">
+                    <button class="btn-secondary" id="adminLogoutBtn" type="button" hidden>Sair</button>
+                    <a href="index.html" class="btn-login">Voltar ao Site</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="admin-page">
+        <section class="admin-login-shell" id="adminLoginShell">
+            <div class="container">
+                <div class="admin-login-card">
+                    <p class="section-kicker">Acesso Administrativo</p>
+                    <h1>Painel privado de moderação</h1>
+                    <p class="hero-text">Somente administradores autenticados podem visualizar e moderar os registros desta área.</p>
+
+                    <form id="adminStandaloneLoginForm" class="admin-standalone-form">
+                        <div class="form-group">
+                            <label for="adminStandaloneUser">Usuário</label>
+                            <input id="adminStandaloneUser" type="text" name="username" required placeholder="Seu usuário admin">
+                        </div>
+                        <div class="form-group">
+                            <label for="adminStandalonePass">Senha</label>
+                            <input id="adminStandalonePass" type="password" name="password" required placeholder="Sua senha admin">
+                        </div>
+                        <p class="form-feedback" id="adminStandaloneFeedback" hidden></p>
+                        <button type="submit" class="btn-primary form-submit">Entrar no Painel</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <section class="reports-section" id="adminDashboard" hidden>
+            <div class="container">
+                <div class="section-heading section-heading-inline">
+                    <div>
+                        <p class="section-kicker">Moderação</p>
+                        <h2>Painel de Administração</h2>
+                        <p>Visão completa da fila de análise e das decisões já publicadas.</p>
+                    </div>
+                </div>
+
+                <div class="admin-stats">
+                    <div class="stat-card">
+                        <span class="stat-label">Pendentes</span>
+                        <span class="stat-value" id="statPending">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Aprovados</span>
+                        <span class="stat-value" id="statApproved">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Total</span>
+                        <span class="stat-value" id="statTotal">0</span>
+                    </div>
+                </div>
+
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Jogador</th>
+                                <th>Servidor</th>
+                                <th>Status</th>
+                                <th>Data</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="modal" id="detailsModal" aria-hidden="true">
+        <div class="modal-content modal-content-lg">
+            <button class="modal-close" data-close-modal type="button" aria-label="Fechar">&times;</button>
+            <div id="detailsContent"></div>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>
