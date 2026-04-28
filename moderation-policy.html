@@ -1,22 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hytale-Server-Guard | Moderation Policy</title>
-    <meta name="description" content="Moderation Policy for Hytale Server Guard defining report categories, evidence requirements, review standards and rejection criteria.">
+    <meta name="description" data-i18n-content="moderation_meta" content="Moderation Policy do Hytale Server Guard definindo categorias de report, requisitos de evidência, revisão humana e critérios de rejeição.">
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
-<body class="policy-page">
+<body class="policy-page" data-title-key="moderation_title">
     <header class="site-header">
         <div class="container">
             <nav>
                 <a href="index.html" class="logo">Hytale-Server-<span>Guard</span></a>
                 <div class="nav-actions">
-                    <a class="btn-login" href="index.html">Voltar ao Site</a>
+                    <div class="language-switcher">
+                        <label class="sr-only" for="languageSelect">Idioma</label>
+                        <select id="languageSelect" aria-label="Idioma">
+                            <option value="pt-BR">PT</option>
+                            <option value="en">EN</option>
+                            <option value="es">ES</option>
+                        </select>
+                    </div>
+                    <a class="btn-login" href="index.html" data-i18n="common_back">Voltar ao Site</a>
                 </div>
             </nav>
         </div>
@@ -25,84 +33,86 @@
     <main class="policy-main">
         <div class="container">
             <div class="policy-hero">
-                <p class="section-kicker">Moderation Standards</p>
-                <h1>Moderation Policy</h1>
-                <p>This policy governs what may be reported, the minimum evidence threshold, and the review standards applied before any record appears in the public Player Reports or Moderated Watchlist.</p>
+                <p class="section-kicker" data-i18n="moderation_kicker">Padrões de Moderação</p>
+                <h1 data-i18n="moderation_h1">Moderation Policy</h1>
+                <p data-i18n="moderation_intro">Esta política define o que pode ser reportado, o padrão mínimo de prova e os critérios de revisão aplicados antes que qualquer registro apareça publicamente em Player Reports ou na Moderated Watchlist.</p>
             </div>
 
             <div class="policy-layout">
                 <article class="policy-article">
                     <section class="policy-block">
-                        <h2>1. Reportable Conduct</h2>
-                        <p>The platform may review submissions related to harmful conduct in community-operated Hytale servers, including but not limited to:</p>
+                        <h2 data-i18n="moderation_s1_h">1. O que Pode Ser Reportado</h2>
+                        <p data-i18n="moderation_s1_p">A plataforma pode revisar envios relacionados a condutas prejudiciais em servidores comunitários de Hytale, incluindo, sem limitação:</p>
                         <ul>
-                            <li>griefing and deliberate destruction of player or server assets</li>
-                            <li>use of exploits or unauthorized mechanics abuse</li>
-                            <li>scam attempts, fraud patterns, or deceptive trade behavior</li>
-                            <li>hacks, cheats, or unauthorized client modifications</li>
-                            <li>ban evasion and repeat-entry behavior after server sanctions</li>
-                            <li>other harmful conduct that materially affects server safety or trust</li>
+                            <li data-i18n="moderation_s1_l1">griefing e destruição deliberada de bens ou estruturas</li>
+                            <li data-i18n="moderation_s1_l2">uso de exploits ou abuso de mecânicas não autorizadas</li>
+                            <li data-i18n="moderation_s1_l3">tentativas de scam, fraude ou conduta enganosa em trocas</li>
+                            <li data-i18n="moderation_s1_l4">hacks, cheats ou modificações não autorizadas</li>
+                            <li data-i18n="moderation_s1_l5">ban evasion e reentrada após sanções do servidor</li>
+                            <li data-i18n="moderation_s1_l6">outras condutas que afetem materialmente a segurança do servidor</li>
                         </ul>
                     </section>
 
                     <section class="policy-block">
-                        <h2>2. Evidence Requirements</h2>
-                        <p>Every submission must contain clear supporting material. A report without evidence is not eligible for publication.</p>
+                        <h2 data-i18n="moderation_s2_h">2. Requisitos de Evidência</h2>
+                        <p data-i18n="moderation_s2_p">Toda submissão precisa conter material de apoio claro. Um report sem prova não é elegível para publicação.</p>
                         <ul>
-                            <li>evidence is mandatory for review</li>
-                            <li>links must be accessible and reasonably verifiable</li>
-                            <li>allegations must be consistent with the materials submitted</li>
-                            <li>records should identify the relevant player, server, and incident context</li>
+                            <li data-i18n="moderation_s2_l1">evidência é obrigatória para revisão</li>
+                            <li data-i18n="moderation_s2_l2">links precisam ser acessíveis e razoavelmente verificáveis</li>
+                            <li data-i18n="moderation_s2_l3">as alegações devem ser consistentes com o material enviado</li>
+                            <li data-i18n="moderation_s2_l4">o registro deve identificar jogador, servidor e contexto do incidente</li>
                         </ul>
                     </section>
 
                     <section class="policy-block">
-                        <h2>3. Human Review Process</h2>
-                        <p>No report is published automatically. Each submission undergoes human moderation before visibility is granted.</p>
+                        <h2 data-i18n="moderation_s3_h">3. Processo de Revisão Humana</h2>
+                        <p data-i18n="moderation_s3_p">Nenhuma denúncia é publicada automaticamente. Cada envio passa por revisão humana antes de qualquer visibilidade pública.</p>
                         <ul>
-                            <li>initial intake and completeness check</li>
-                            <li>evidence review and consistency screening</li>
-                            <li>neutral wording review and redaction where appropriate</li>
-                            <li>approval, rejection, or hold for additional clarification</li>
+                            <li data-i18n="moderation_s3_l1">triagem inicial de integridade e completude</li>
+                            <li data-i18n="moderation_s3_l2">revisão de evidências e consistência</li>
+                            <li data-i18n="moderation_s3_l3">ajuste de neutralidade e redação quando necessário</li>
+                            <li data-i18n="moderation_s3_l4">aprovação, rejeição ou retenção para esclarecimento adicional</li>
                         </ul>
                     </section>
 
                     <section class="policy-block">
-                        <h2>4. Rejection Criteria</h2>
-                        <p>Moderators should reject or suppress records that do not satisfy the minimum standard. Rejection may apply where a report is:</p>
+                        <h2 data-i18n="moderation_s4_h">4. Critérios de Rejeição</h2>
+                        <p data-i18n="moderation_s4_p">Moderadores devem reprovar ou suprimir registros que não atendam ao padrão mínimo. A rejeição pode ocorrer quando o envio for:</p>
                         <ul>
-                            <li>unsupported by evidence</li>
-                            <li>backed by weak, ambiguous, or insufficient proof</li>
-                            <li>duplicative without meaningful new elements</li>
-                            <li>submitted in bad faith or for harassment</li>
-                            <li>framed in defamatory or excessively accusatory language</li>
-                            <li>inconsistent with the evidence shown</li>
+                            <li data-i18n="moderation_s4_l1">sem prova</li>
+                            <li data-i18n="moderation_s4_l2">com prova ambígua, fraca ou insuficiente</li>
+                            <li data-i18n="moderation_s4_l3">duplicado sem elementos novos relevantes</li>
+                            <li data-i18n="moderation_s4_l4">feito em má fé ou com intuito de assédio</li>
+                            <li data-i18n="moderation_s4_l5">difamatório ou excessivamente acusatório</li>
+                            <li data-i18n="moderation_s4_l6">inconsistente com as evidências apresentadas</li>
                         </ul>
                     </section>
 
                     <section class="policy-block">
-                        <h2>5. Internal Audit Recommendation</h2>
-                        <p>For internal compliance and dispute handling, the platform should retain the original submission, supporting evidence, moderation rationale, and operational logs showing who reviewed the case and when.</p>
+                        <h2 data-i18n="moderation_s5_h">5. Recomendação de Auditoria Interna</h2>
+                        <p data-i18n="moderation_s5_p">Para compliance e tratamento de disputas, a plataforma deve reter a denúncia original, as provas, a justificativa da aprovação e os logs operacionais de moderação.</p>
                     </section>
                 </article>
 
                 <aside class="policy-aside">
                     <div>
-                        <h3>Mandatory Rules</h3>
+                        <h3 data-i18n="moderation_aside_h1">Regras Obrigatórias</h3>
                         <ul>
-                            <li>Never publish without evidence.</li>
-                            <li>Never publish automatically.</li>
-                            <li>Always prefer neutral wording.</li>
+                            <li data-i18n="moderation_aside_l1">Nunca publicar sem prova.</li>
+                            <li data-i18n="moderation_aside_l2">Nunca publicar automaticamente.</li>
+                            <li data-i18n="moderation_aside_l3">Sempre preferir linguagem neutra.</li>
                         </ul>
                     </div>
 
                     <div>
-                        <h3>Terminology Guidance</h3>
-                        <p>Prefer terms such as Incident Registry, Player Reports, and Moderated Watchlist. Avoid dramatic or definitive labels suggesting criminal certainty.</p>
+                        <h3 data-i18n="moderation_aside_h2">Terminologia Recomendada</h3>
+                        <p data-i18n="moderation_aside_p2">Prefira termos como Incident Registry, Player Reports e Moderated Watchlist. Evite rótulos dramáticos ou conclusivos.</p>
                     </div>
                 </aside>
             </div>
         </div>
     </main>
+
+    <script src="policy-pages.js"></script>
 </body>
 </html>

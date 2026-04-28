@@ -1,22 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hytale-Server-Guard | Terms of Use</title>
-    <meta name="description" content="Terms of Use for Hytale Server Guard covering platform scope, user responsibilities, moderation rights and community safe harbor principles.">
+    <meta name="description" data-i18n-content="terms_meta" content="Terms of Use do Hytale Server Guard cobrindo escopo da plataforma, responsabilidade do usuário, direitos de moderação e princípios de safe harbor comunitário.">
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
-<body class="policy-page">
+<body class="policy-page" data-title-key="terms_title">
     <header class="site-header">
         <div class="container">
             <nav>
                 <a href="index.html" class="logo">Hytale-Server-<span>Guard</span></a>
                 <div class="nav-actions">
-                    <a class="btn-login" href="index.html">Voltar ao Site</a>
+                    <div class="language-switcher">
+                        <label class="sr-only" for="languageSelect">Idioma</label>
+                        <select id="languageSelect" aria-label="Idioma">
+                            <option value="pt-BR">PT</option>
+                            <option value="en">EN</option>
+                            <option value="es">ES</option>
+                        </select>
+                    </div>
+                    <a class="btn-login" href="index.html" data-i18n="common_back">Voltar ao Site</a>
                 </div>
             </nav>
         </div>
@@ -25,84 +33,86 @@
     <main class="policy-main">
         <div class="container">
             <div class="policy-hero">
-                <p class="section-kicker">Compliance</p>
-                <h1>Terms of Use</h1>
-                <p>These terms position Hytale Server Guard as a moderated incident registry and community review platform. The service does not act as a court, public authority, or definitive adjudicator of guilt.</p>
+                <p class="section-kicker" data-i18n="terms_kicker">Compliance</p>
+                <h1 data-i18n="terms_h1">Terms of Use</h1>
+                <p data-i18n="terms_intro">Estes termos posicionam o Hytale Server Guard como um registro moderado de incidentes e reports comunitários. O serviço não atua como tribunal, autoridade pública ou instância definitiva de culpa.</p>
             </div>
 
             <div class="policy-layout">
                 <article class="policy-article">
                     <section class="policy-block">
-                        <h2>1. Nature of the Platform</h2>
-                        <p>Hytale Server Guard operates as a moderated repository of player reports, server incident records, and watchlist entries submitted by users and reviewed by administrators. Records are published only after human review and according to internal moderation standards.</p>
-                        <p class="policy-callout">Publication on the platform does not constitute a final legal finding, judicial determination, or definitive declaration of guilt.</p>
+                        <h2 data-i18n="terms_s1_h">1. Natureza da Plataforma</h2>
+                        <p data-i18n="terms_s1_p1">O Hytale Server Guard opera como um repositório moderado de player reports, incidentes de servidor e registros de watchlist submetidos por usuários e revisados por administradores. Os registros só são publicados após revisão humana e conforme padrões internos de moderação.</p>
+                        <p class="policy-callout" data-i18n="terms_s1_p2">A publicação em plataforma não constitui conclusão jurídica final, decisão judicial ou declaração definitiva de culpa.</p>
                     </section>
 
                     <section class="policy-block">
-                        <h2>2. User Responsibility</h2>
-                        <p>Each reporting user is solely responsible for the accuracy, lawfulness, and good-faith basis of the information submitted. Users must not submit fabricated, malicious, fraudulent, defamatory, or intentionally misleading allegations.</p>
+                        <h2 data-i18n="terms_s2_h">2. Responsabilidade do Usuário</h2>
+                        <p data-i18n="terms_s2_p">Cada denunciante é responsável pela precisão, licitude e boa-fé das informações submetidas. É proibido enviar alegações fabricadas, maliciosas, fraudulentas, difamatórias ou intencionalmente enganosas.</p>
                         <ul>
-                            <li>Reports must be supported by evidence.</li>
-                            <li>False or retaliatory submissions are prohibited.</li>
-                            <li>Users must not impersonate others or alter evidence to create misleading impressions.</li>
+                            <li data-i18n="terms_s2_l1">Reports devem ser acompanhados de evidência.</li>
+                            <li data-i18n="terms_s2_l2">Denúncias falsas, retaliatórias ou maliciosas são proibidas.</li>
+                            <li data-i18n="terms_s2_l3">Usuários não podem se passar por terceiros nem manipular provas para induzir erro.</li>
                         </ul>
                     </section>
 
                     <section class="policy-block">
-                        <h2>3. Moderation and Editorial Rights</h2>
-                        <p>The platform reserves the right, at its discretion and in accordance with its policies, to review, reject, edit, limit, remove, archive, or suppress submitted records and related materials.</p>
+                        <h2 data-i18n="terms_s3_h">3. Direito de Moderação e Edição</h2>
+                        <p data-i18n="terms_s3_p">A plataforma reserva-se o direito, a seu critério e conforme suas políticas, de revisar, rejeitar, editar, limitar, remover, arquivar ou suprimir registros submetidos e materiais relacionados.</p>
                         <ul>
-                            <li>reject reports that do not satisfy minimum evidence standards</li>
-                            <li>edit records for clarity, neutrality, or policy compliance</li>
-                            <li>remove contested materials pending review</li>
-                            <li>suspend or terminate abusive accounts</li>
-                            <li>preserve internal moderation logs for audit purposes</li>
+                            <li data-i18n="terms_s3_l1">rejeitar denúncias sem padrão mínimo de evidência</li>
+                            <li data-i18n="terms_s3_l2">editar registros para clareza, neutralidade ou conformidade</li>
+                            <li data-i18n="terms_s3_l3">remover materiais contestados enquanto estiverem em revisão</li>
+                            <li data-i18n="terms_s3_l4">suspender ou encerrar contas abusivas</li>
+                            <li data-i18n="terms_s3_l5">preservar logs internos de moderação para auditoria</li>
                         </ul>
                     </section>
 
                     <section class="policy-block">
-                        <h2>4. No Automatic Publication</h2>
-                        <p>No report is published automatically. Every record is subject to human moderation before it becomes visible in the public Incident Registry or Moderated Watchlist.</p>
+                        <h2 data-i18n="terms_s4_h">4. Nunca Publicar Automaticamente</h2>
+                        <p data-i18n="terms_s4_p">Nenhuma denúncia é publicada automaticamente. Todo registro passa por moderação humana antes de se tornar visível no Incident Registry ou na Moderated Watchlist.</p>
                     </section>
 
                     <section class="policy-block">
-                        <h2>5. Community Safe Harbor Principle</h2>
-                        <p>Hytale Server Guard acts as an intermediary for user-submitted content and reserves the right to review, restrict, or remove materials that are disputed, incomplete, or inconsistent with internal standards.</p>
+                        <h2 data-i18n="terms_s5_h">5. Cláusula de Safe Harbor Comunitário</h2>
+                        <p data-i18n="terms_s5_p">O Hytale Server Guard atua como intermediador de conteúdo submetido por usuários e reserva-se o direito de revisar, restringir ou remover materiais contestados, incompletos ou incompatíveis com seus padrões internos.</p>
                     </section>
 
                     <section class="policy-block">
-                        <h2>6. Abuse of the System</h2>
-                        <p>Use of the platform for harassment, retaliation, false reporting, or malicious escalation may result in account suspension, content deletion, denial of future submissions, and broader restriction of access.</p>
+                        <h2 data-i18n="terms_s6_h">6. Abuso do Sistema</h2>
+                        <p data-i18n="terms_s6_p">O uso da plataforma para assédio, retaliação, denúncias falsas ou escalada maliciosa pode resultar em suspensão de conta, remoção de conteúdo, bloqueio de novos envios e outras restrições de acesso.</p>
                     </section>
                 </article>
 
                 <aside class="policy-aside">
                     <div>
-                        <p class="section-kicker">Core Principles</p>
+                        <p class="section-kicker" data-i18n="terms_aside_kicker">Princípios-base</p>
                         <div class="policy-pill-list">
-                            <span class="policy-pill">Evidence Required</span>
-                            <span class="policy-pill">Human Review</span>
-                            <span class="policy-pill">Neutral Wording</span>
-                            <span class="policy-pill">Appeal Rights</span>
+                            <span class="policy-pill" data-i18n="terms_aside_pill1">Evidência Obrigatória</span>
+                            <span class="policy-pill" data-i18n="terms_aside_pill2">Revisão Humana</span>
+                            <span class="policy-pill" data-i18n="terms_aside_pill3">Linguagem Neutra</span>
+                            <span class="policy-pill" data-i18n="terms_aside_pill4">Direito de Apelação</span>
                         </div>
                     </div>
 
                     <div>
-                        <h3>Operational Rule</h3>
-                        <p>The public registry should prefer neutral expressions such as “reported by”, “incident recorded”, and “submission under review”. Avoid accusatory labels or definitive criminal language.</p>
+                        <h3 data-i18n="terms_aside_h1">Regra Operacional</h3>
+                        <p data-i18n="terms_aside_p1">Na área pública, prefira expressões como “reportado por”, “incidente registrado” e “alegação submetida”. Evite linguagem acusatória ou rótulos definitivos.</p>
                     </div>
 
                     <div>
-                        <h3>Related Policies</h3>
+                        <h3 data-i18n="terms_aside_h2">Políticas Relacionadas</h3>
                         <ul>
-                            <li><a href="moderation-policy.html">Moderation Policy</a></li>
-                            <li><a href="appeals-policy.html">Appeals Policy</a></li>
-                            <li><a href="privacy-policy.html">Privacy Policy</a></li>
+                            <li><a href="moderation-policy.html" data-i18n="common_moderation">Moderation Policy</a></li>
+                            <li><a href="appeals-policy.html" data-i18n="common_appeals">Appeals Policy</a></li>
+                            <li><a href="privacy-policy.html" data-i18n="common_privacy">Privacy Policy</a></li>
                         </ul>
                     </div>
                 </aside>
             </div>
         </div>
     </main>
+
+    <script src="policy-pages.js"></script>
 </body>
 </html>
