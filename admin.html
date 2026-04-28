@@ -10,13 +10,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
-<body>
-    <header class="site-header">
+<body class="admin-body">
+    <header class="site-header admin-site-header">
         <div class="container">
             <nav>
                 <a href="index.html" class="logo">Hytale-Server-<span>Guard</span></a>
                 <div class="nav-actions">
-                    <button class="btn-secondary" id="adminLogoutBtn" type="button" hidden>Sair</button>
                     <a href="index.html" class="btn-login">Voltar ao Site</a>
                 </div>
             </nav>
@@ -29,7 +28,7 @@
                 <div class="admin-login-card">
                     <p class="section-kicker">Acesso Administrativo</p>
                     <h1>Painel privado de moderação</h1>
-                    <p class="hero-text">Somente administradores autenticados podem visualizar e moderar os registros desta área.</p>
+                    <p class="hero-text">Entre para acompanhar a fila de análise, contas cadastradas, visitas e servidores parceiros em uma única área operacional.</p>
 
                     <form id="adminStandaloneLoginForm" class="admin-standalone-form">
                         <div class="form-group">
@@ -47,45 +46,285 @@
             </div>
         </section>
 
-        <section class="reports-section" id="adminDashboard" hidden>
-            <div class="container">
-                <div class="section-heading section-heading-inline">
+        <section class="admin-dashboard-shell" id="adminDashboard" hidden>
+            <aside class="admin-sidebar">
+                <div class="admin-sidebar-brand">
+                    <p class="section-kicker">Controle</p>
+                    <h1>Dashboard</h1>
+                    <p id="adminWelcomeCopy">Central de moderação e operação da base.</p>
+                </div>
+
+                <nav class="admin-sidebar-nav" aria-label="Navegação do painel">
+                    <a href="#adminOverview" class="admin-side-link active">Visão Geral</a>
+                    <a href="#adminModeration" class="admin-side-link">Moderação</a>
+                    <a href="#adminAccounts" class="admin-side-link">Contas</a>
+                    <a href="#adminPartners" class="admin-side-link">Parceiros</a>
+                    <a href="#adminActivity" class="admin-side-link">Atividade</a>
+                </nav>
+
+                <div class="admin-sidebar-foot">
+                    <div class="admin-presence">
+                        <span class="admin-presence-dot"></span>
+                        <span id="adminSessionMeta">Sessão ativa</span>
+                    </div>
+                    <button class="btn-secondary" id="adminLogoutBtn" type="button">Sair</button>
+                </div>
+            </aside>
+
+            <div class="admin-workspace">
+                <section class="admin-topbar">
                     <div>
-                        <p class="section-kicker">Moderação</p>
-                        <h2>Painel de Administração</h2>
-                        <p>Visão completa da fila de análise e das decisões já publicadas.</p>
+                        <p class="section-kicker">Painel Operacional</p>
+                        <h2>Dados de moderação em tempo real da sua base</h2>
                     </div>
-                </div>
+                    <div class="admin-topbar-actions">
+                        <div class="admin-topbar-chip">
+                            <span class="admin-presence-dot"></span>
+                            <span id="adminLastRefreshLabel">Atualizando dados...</span>
+                        </div>
+                        <button class="btn-primary" id="adminRefreshBtn" type="button">Atualizar Painel</button>
+                    </div>
+                </section>
 
-                <div class="admin-stats">
-                    <div class="stat-card">
-                        <span class="stat-label">Pendentes</span>
-                        <span class="stat-value" id="statPending">0</span>
+                <section class="admin-section" id="adminOverview">
+                    <div class="admin-section-head">
+                        <div>
+                            <p class="section-kicker">Resumo</p>
+                            <h3>Indicadores principais</h3>
+                        </div>
                     </div>
-                    <div class="stat-card">
-                        <span class="stat-label">Aprovados</span>
-                        <span class="stat-value" id="statApproved">0</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-label">Total</span>
-                        <span class="stat-value" id="statTotal">0</span>
-                    </div>
-                </div>
 
-                <div class="admin-table-container">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>Jogador</th>
-                                <th>Servidor</th>
-                                <th>Status</th>
-                                <th>Data</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="adminTableBody"></tbody>
-                    </table>
-                </div>
+                    <div class="admin-kpi-grid">
+                        <article class="admin-kpi">
+                            <span class="admin-kpi-label">Visitas totais</span>
+                            <strong class="admin-kpi-value" id="kpiVisitsTotal">0</strong>
+                            <small id="kpiVisitsSplit">0 públicas / 0 admin</small>
+                        </article>
+                        <article class="admin-kpi">
+                            <span class="admin-kpi-label">Fila pendente</span>
+                            <strong class="admin-kpi-value" id="kpiPending">0</strong>
+                            <small id="kpiReportsTotal">0 denúncias no total</small>
+                        </article>
+                        <article class="admin-kpi">
+                            <span class="admin-kpi-label">Contas cadastradas</span>
+                            <strong class="admin-kpi-value" id="kpiUsersTotal">0</strong>
+                            <small id="kpiUsersSplit">0 donos / 0 jogadores</small>
+                        </article>
+                        <article class="admin-kpi">
+                            <span class="admin-kpi-label">Servidores parceiros</span>
+                            <strong class="admin-kpi-value" id="kpiPartnersTotal">0</strong>
+                            <small>Rede manual do painel</small>
+                        </article>
+                    </div>
+
+                    <div class="admin-dual-grid">
+                        <article class="admin-panel-surface admin-chart-surface">
+                            <div class="admin-surface-head">
+                                <div>
+                                    <p class="section-kicker">Visitas</p>
+                                    <h4>Últimos 14 dias</h4>
+                                </div>
+                                <span class="admin-surface-note">Público + admin</span>
+                            </div>
+                            <div class="admin-chart-wrap">
+                                <svg id="visitsChart" viewBox="0 0 640 240" class="admin-chart" aria-label="Gráfico de visitas"></svg>
+                            </div>
+                            <div class="admin-chart-legend">
+                                <span><i class="legend-dot legend-gold"></i>Público</span>
+                                <span><i class="legend-dot legend-blue"></i>Admin</span>
+                            </div>
+                        </article>
+
+                        <article class="admin-panel-surface admin-chart-surface">
+                            <div class="admin-surface-head">
+                                <div>
+                                    <p class="section-kicker">Fluxo</p>
+                                    <h4>Denúncias registradas</h4>
+                                </div>
+                                <span class="admin-surface-note">Últimos 14 dias</span>
+                            </div>
+                            <div class="admin-chart-wrap">
+                                <svg id="reportsChart" viewBox="0 0 640 240" class="admin-chart" aria-label="Gráfico de denúncias"></svg>
+                            </div>
+                            <p class="admin-surface-copy">Use este ritmo para perceber picos de movimentação e preparar a moderação.</p>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="admin-section" id="adminModeration">
+                    <div class="admin-section-head">
+                        <div>
+                            <p class="section-kicker">Moderação</p>
+                            <h3>Fila e decisões</h3>
+                        </div>
+                        <div class="admin-inline-meta" id="moderationMeta">Carregando fila...</div>
+                    </div>
+
+                    <div class="admin-panel-surface">
+                        <div class="admin-surface-head">
+                            <div>
+                                <h4>Fila principal</h4>
+                                <p class="admin-surface-copy">Aprove, rejeite, revise provas e acompanhe o contexto do caso sem sair da página.</p>
+                            </div>
+                        </div>
+                        <div class="admin-table-container admin-table-container-xl">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>Jogador</th>
+                                        <th>Servidor</th>
+                                        <th>Status</th>
+                                        <th>Origem</th>
+                                        <th>Data</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="admin-dual-grid">
+                        <article class="admin-panel-surface">
+                            <div class="admin-surface-head">
+                                <div>
+                                    <p class="section-kicker">Calor por servidor</p>
+                                    <h4>Servidores mais citados</h4>
+                                </div>
+                            </div>
+                            <div class="admin-risk-list" id="serverRiskList"></div>
+                        </article>
+
+                        <article class="admin-panel-surface">
+                            <div class="admin-surface-head">
+                                <div>
+                                    <p class="section-kicker">Autoria</p>
+                                    <h4>Contas que mais enviam</h4>
+                                </div>
+                            </div>
+                            <div class="admin-activity-list" id="topReportersList"></div>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="admin-section" id="adminAccounts">
+                    <div class="admin-section-head">
+                        <div>
+                            <p class="section-kicker">Contas</p>
+                            <h3>Usuários e perfil operacional</h3>
+                        </div>
+                        <div class="admin-inline-meta" id="accountsMeta">Carregando contas...</div>
+                    </div>
+
+                    <div class="admin-panel-surface">
+                        <div class="admin-table-container admin-table-container-xl">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>Conta</th>
+                                        <th>Tipo</th>
+                                        <th>Servidor</th>
+                                        <th>Denúncias enviadas</th>
+                                        <th>Cadastro</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="accountsTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="admin-section" id="adminPartners">
+                    <div class="admin-section-head">
+                        <div>
+                            <p class="section-kicker">Rede parceira</p>
+                            <h3>Servidores parceiros</h3>
+                        </div>
+                        <div class="admin-inline-meta">Cadastro manual para organização interna</div>
+                    </div>
+
+                    <div class="admin-dual-grid admin-dual-grid-tight">
+                        <article class="admin-panel-surface">
+                            <div class="admin-surface-head">
+                                <div>
+                                    <h4>Novo parceiro</h4>
+                                    <p class="admin-surface-copy">Use isso para mapear comunidades aliadas e o status da relação.</p>
+                                </div>
+                            </div>
+                            <form id="partnerForm" class="partner-form">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="partnerName">Nome do servidor</label>
+                                        <input id="partnerName" type="text" name="name" required placeholder="Ex: Realm Guard">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="partnerRegion">Região</label>
+                                        <input id="partnerRegion" type="text" name="region" required placeholder="BR / LATAM / Global">
+                                    </div>
+                                </div>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="partnerStatus">Status</label>
+                                        <div class="select-wrap">
+                                            <select id="partnerStatus" name="status">
+                                                <option value="Ativo">Ativo</option>
+                                                <option value="Observação">Observação</option>
+                                                <option value="Pausado">Pausado</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="partnerNote">Nota interna</label>
+                                        <input id="partnerNote" type="text" name="note" placeholder="Canal principal, contato, contexto">
+                                    </div>
+                                </div>
+                                <p class="form-feedback" id="partnerFeedback" hidden></p>
+                                <button type="submit" class="btn-primary form-submit">Salvar parceiro</button>
+                            </form>
+                        </article>
+
+                        <article class="admin-panel-surface">
+                            <div class="admin-surface-head">
+                                <div>
+                                    <h4>Lista atual</h4>
+                                    <p class="admin-surface-copy">Panorama rápido dos parceiros disponíveis no momento.</p>
+                                </div>
+                            </div>
+                            <div class="admin-partner-list" id="partnerList"></div>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="admin-section" id="adminActivity">
+                    <div class="admin-section-head">
+                        <div>
+                            <p class="section-kicker">Atividade</p>
+                            <h3>Últimos eventos úteis</h3>
+                        </div>
+                    </div>
+
+                    <div class="admin-dual-grid">
+                        <article class="admin-panel-surface">
+                            <div class="admin-surface-head">
+                                <div>
+                                    <h4>Denúncias recentes</h4>
+                                    <p class="admin-surface-copy">Entradas mais novas para triagem rápida.</p>
+                                </div>
+                            </div>
+                            <div class="admin-activity-list" id="recentReportsList"></div>
+                        </article>
+
+                        <article class="admin-panel-surface">
+                            <div class="admin-surface-head">
+                                <div>
+                                    <h4>Contas recentes</h4>
+                                    <p class="admin-surface-copy">Cadastros mais novos da plataforma.</p>
+                                </div>
+                            </div>
+                            <div class="admin-activity-list" id="recentUsersList"></div>
+                        </article>
+                    </div>
+                </section>
             </div>
         </section>
     </main>

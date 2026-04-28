@@ -54,3 +54,23 @@
   from = "/api/reports/admin/delete"
   to = "/.netlify/functions/reports-admin-delete"
   status = 200
+
+[[redirects]]
+  from = "/api/admin/dashboard"
+  to = "/.netlify/functions/admin-dashboard"
+  status = 200
+
+[[redirects]]
+  from = "/api/admin/users"
+  to = "/.netlify/functions/admin-users"
+  status = 200
+
+[[redirects]]
+  from = "/api/admin/partners"
+  to = "/.netlify/functions/admin-partners"
+  status = 200
+
+[[redirects]]
+  from = "/api/analytics/track"
+  to = "/.netlify/functions/analytics-track"
+  status = 200

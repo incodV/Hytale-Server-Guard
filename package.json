@@ -2,6 +2,10 @@
   "name": "hytale-server-guard",
   "private": true,
   "version": "1.0.0",
+  "scripts": {
+    "dev": "npx netlify-cli dev",
+    "serve": "npx netlify-cli dev"
+  },
   "dependencies": {
     "@netlify/blobs": "10.7.4"
   }

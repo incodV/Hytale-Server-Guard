@@ -8,6 +8,7 @@ const STORAGE_KEYS = {
 
 const API = {
     gotalePlayer: "/api/gotale/player",
+    analyticsTrack: "/api/analytics/track",
     reportsPublic: "/api/reports/public",
     reportsCreate: "/api/reports/create",
     reportsMine: "/api/reports/mine",
@@ -22,6 +23,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     setCurrentYear();
     loadStoredSessions();
     setupEventListeners();
+    trackVisit("public");
     await loadData();
     await refreshUI();
 });
@@ -739,6 +741,18 @@ async function safeFetchJson(url, options = {}) {
         console.error("Erro de rede:", error);
         return null;
     }
+}
+
+function trackVisit(page) {
+    if (!canUseBackend()) {
+        return;
+    }
+
+    safeFetchJson(API.analyticsTrack, {
+        method: "POST",
+        headers: jsonHeaders(),
+        body: JSON.stringify({ page })
+    });
 }
 
 function jsonHeaders() {

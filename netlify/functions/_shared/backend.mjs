@@ -61,6 +61,20 @@ export async function saveUser(user) {
     await getUsersStore().setJSON(userKey(user.email), user);
 }
 
+export async function listUsers() {
+    const { blobs } = await getUsersStore().list();
+    const users = [];
+
+    for (const blob of blobs) {
+        const user = await getUsersStore().get(blob.key, { type: "json" });
+        if (user) {
+            users.push(user);
+        }
+    }
+
+    return users.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+}
+
 export async function getUserFromToken(request) {
     const token = extractBearerToken(request);
     if (!token) {
@@ -102,6 +116,61 @@ export async function saveReport(report) {
 
 export async function deleteReportById(id) {
     await getReportsStore().delete(reportKey(id));
+}
+
+export async function listPartnerServers() {
+    const { blobs } = await getPartnersStore().list();
+    const servers = [];
+
+    for (const blob of blobs) {
+        const server = await getPartnersStore().get(blob.key, { type: "json" });
+        if (server) {
+            servers.push(server);
+        }
+    }
+
+    return servers.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+}
+
+export async function savePartnerServer(server) {
+    await getPartnersStore().setJSON(partnerKey(server.id), server);
+}
+
+export async function deletePartnerServerById(id) {
+    await getPartnersStore().delete(partnerKey(id));
+}
+
+export async function recordVisit(page) {
+    const day = getDayKey();
+    const key = analyticsKey(day);
+    const current = await getAnalyticsStore().get(key, { type: "json" });
+    const safePage = sanitize(page) || "public";
+    const updated = {
+        date: day,
+        total: Number(current?.total || 0) + 1,
+        pages: {
+            ...(current?.pages || {}),
+            [safePage]: Number(current?.pages?.[safePage] || 0) + 1
+        },
+        updatedAt: new Date().toISOString()
+    };
+
+    await getAnalyticsStore().setJSON(key, updated);
+    return updated;
+}
+
+export async function listAnalytics() {
+    const { blobs } = await getAnalyticsStore().list();
+    const metrics = [];
+
+    for (const blob of blobs) {
+        const item = await getAnalyticsStore().get(blob.key, { type: "json" });
+        if (item) {
+            metrics.push(item);
+        }
+    }
+
+    return metrics.sort((a, b) => new Date(a.date) - new Date(b.date));
 }
 
 export function isAdminAuthorized(request) {
@@ -151,12 +220,28 @@ function reportKey(id) {
     return `report:${id}`;
 }
 
+function partnerKey(id) {
+    return `partner:${id}`;
+}
+
+function analyticsKey(day) {
+    return `analytics:${day}`;
+}
+
 function getUsersStore() {
     return getStore("hsg-users");
 }
 
 function getReportsStore() {
     return getStore("hsg-reports");
+}
+
+function getPartnersStore() {
+    return getStore("hsg-partners");
+}
+
+function getAnalyticsStore() {
+    return getStore("hsg-analytics");
 }
 
 function extractBearerToken(request) {
@@ -166,4 +251,8 @@ function extractBearerToken(request) {
     }
 
     return authorization.slice(7).trim();
+}
+
+function getDayKey() {
+    return new Date().toISOString().slice(0, 10);
 }
