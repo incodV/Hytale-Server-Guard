@@ -3,8 +3,10 @@ let currentUser = null;
 let userSessionToken = "";
 const STORAGE_KEYS = {
     localReports: "hytaleguard_reports",
-    userSession: "hytaleguard_user_session"
+    userSession: "hytaleguard_user_session",
+    reportLikes: "hytaleguard_report_likes"
 };
+let likedReports = {};
 
 const API = {
     gotalePlayer: "/api/gotale/player",
@@ -42,6 +44,11 @@ function loadStoredSessions() {
         userSessionToken = "";
     }
 
+    try {
+        likedReports = JSON.parse(localStorage.getItem(STORAGE_KEYS.reportLikes) || "{}");
+    } catch (error) {
+        likedReports = {};
+    }
 }
 
 async function loadData() {
@@ -161,7 +168,7 @@ function renderReports(dataToRender = null) {
                         <p>${escapeHtml(excerptText(report.reason, 220))}</p>
                         <div class="report-body-meta">
                             <span>${escapeHtml(t("label_server"))}: ${escapeHtml(report.server)}</span>
-                            <span>${escapeHtml(t("label_reporter"))}: ${escapeHtml(report.reporterName || report.discord)}</span>
+                            <span>${escapeHtml(t("label_source_protected"))}</span>
                         </div>
                     </div>
 
@@ -169,6 +176,9 @@ function renderReports(dataToRender = null) {
                         <span>${formatDate(report.createdAt)}</span>
                         <div class="report-footer-actions">
                             <span>${buildProofLinksSummary(report.proofLinks)}</span>
+                            <button class="btn-like ${hasLikedReport(report.id) ? "active" : ""}" type="button" data-like-report="${escapeAttribute(report.id)}">
+                                ${escapeHtml(t("action_like"))} <strong>${getLikeCount(report.id)}</strong>
+                            </button>
                             <button class="btn-view" type="button" data-view-report="${escapeAttribute(report.id)}">Ver detalhes</button>
                         </div>
                     </div>
@@ -579,8 +589,8 @@ function viewReportDetails(id) {
                     <dd>${escapeHtml(report.server)}</dd>
                 </div>
                 <div>
-                    <dt>Conta autora</dt>
-                    <dd>${escapeHtml(report.reporterName || report.discord)}</dd>
+                    <dt>Origem</dt>
+                    <dd>${escapeHtml(t("detail_source_protected"))}</dd>
                 </div>
                 <div>
                     <dt>Avatar</dt>
@@ -604,6 +614,7 @@ function viewReportDetails(id) {
 
 function setupEventListeners() {
     bindIfExists("searchInput", "input", (event) => handleSearch(event.target.value));
+    bindIfExists("searchInput", "keydown", handleSearchEnter);
     bindIfExists("btnOpenReport", "click", () => openModal("reportModal"));
     bindIfExists("accountBtn", "click", () => openModal("accountModal"));
     bindIfExists("accountActionBtn", "click", () => currentUser ? loadMyReports() : openModal("accountModal"));
@@ -623,6 +634,12 @@ function setupEventListeners() {
     const reportsGrid = document.getElementById("reportsGrid");
     if (reportsGrid) {
         reportsGrid.addEventListener("click", (event) => {
+            const likeTrigger = event.target.closest("[data-like-report]");
+            if (likeTrigger) {
+                toggleReportLike(likeTrigger.dataset.likeReport);
+                return;
+            }
+
             const trigger = event.target.closest("[data-view-report]");
             if (!trigger) {
                 return;
@@ -777,6 +794,74 @@ function excerptText(value, maxLength = 220) {
     }
 
     return `${text.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
+function handleSearchEnter(event) {
+    if (event.key !== "Enter") {
+        return;
+    }
+
+    const query = String(event.target?.value || "").trim();
+    if (!query) {
+        return;
+    }
+
+    const normalizedQuery = normalizeText(query);
+    const match = reports
+        .filter((report) => report.status === "Aprovado")
+        .find((report) =>
+            [report.playerName, report.uuid, report.server]
+                .filter(Boolean)
+                .some((value) => normalizeText(value).includes(normalizedQuery))
+        );
+
+    if (!match) {
+        return;
+    }
+
+    event.preventDefault();
+    viewReportDetails(match.id);
+}
+
+function toggleReportLike(reportId) {
+    if (!reportId) {
+        return;
+    }
+
+    const currentCount = getLikeCount(reportId);
+    if (hasLikedReport(reportId)) {
+        likedReports[reportId] = Math.max(currentCount - 1, 0);
+        if (likedReports[reportId] === 0) {
+            delete likedReports[reportId];
+        }
+    } else {
+        likedReports[reportId] = currentCount + 1;
+    }
+
+    localStorage.setItem(STORAGE_KEYS.reportLikes, JSON.stringify(likedReports));
+    renderReports(getCurrentlyRenderedReports());
+}
+
+function hasLikedReport(reportId) {
+    return Number(likedReports[reportId] || 0) > 0;
+}
+
+function getLikeCount(reportId) {
+    return Number(likedReports[reportId] || 0);
+}
+
+function getCurrentlyRenderedReports() {
+    const searchInput = document.getElementById("searchInput");
+    const query = searchInput?.value.trim() || "";
+    if (!query) {
+        return null;
+    }
+
+    const normalizedQuery = normalizeText(query);
+    return reports.filter((report) =>
+        report.status === "Aprovado" &&
+        [report.playerName, report.uuid, report.server].filter(Boolean).some((value) => normalizeText(value).includes(normalizedQuery))
+    );
 }
 
 function jsonHeaders() {

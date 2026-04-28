@@ -630,6 +630,36 @@ section {
     justify-content: flex-end;
 }
 
+.btn-like {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0.7rem 1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(240, 226, 193, 0.12);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-main);
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.btn-like strong {
+    color: var(--accent-strong);
+}
+
+.btn-like::before {
+    content: "♥";
+    color: #f07d8f;
+    font-size: 0.9rem;
+}
+
+.btn-like:hover,
+.btn-like.active {
+    transform: translateY(-1px);
+    background: rgba(240, 125, 143, 0.08);
+    border-color: rgba(240, 125, 143, 0.24);
+}
+
 .report-footer a,
 .details-proof-link {
     color: var(--accent-strong);

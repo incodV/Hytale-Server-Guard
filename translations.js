@@ -104,6 +104,7 @@ const TRANSLATIONS = {
         status_pending: "Em análise",
         label_server: "Servidor",
         label_reporter: "Denunciante",
+        label_source_protected: "Origem protegida pela moderação",
         admin_no_reports: "Nenhuma denúncia cadastrada.",
         uuid_missing: "UUID não informado",
         action_view: "Ver",
@@ -151,6 +152,8 @@ const TRANSLATIONS = {
         proof_view: "Ver Prova",
         proof_view_count: "Ver {count} provas",
         proof_open_number: "Abrir prova {number}",
+        action_like: "Apoiar",
+        detail_source_protected: "Identidade do denunciante protegida na área pública.",
         search_results_for: "{count} resultado(s) para \"{query}\".",
         search_public_count: "{count} denúncia(s) aprovadas visíveis na base pública."
     },
@@ -259,6 +262,7 @@ const TRANSLATIONS = {
         status_pending: "Under review",
         label_server: "Server",
         label_reporter: "Reporter",
+        label_source_protected: "Source protected by moderation",
         admin_no_reports: "No reports registered.",
         uuid_missing: "UUID not provided",
         action_view: "View",
@@ -306,6 +310,8 @@ const TRANSLATIONS = {
         proof_view: "View Proof",
         proof_view_count: "View {count} proofs",
         proof_open_number: "Open proof {number}",
+        action_like: "Support",
+        detail_source_protected: "Reporter identity is protected in the public area.",
         search_results_for: "{count} result(s) for \"{query}\".",
         search_public_count: "{count} approved report(s) visible in the public database."
     },
@@ -414,6 +420,7 @@ const TRANSLATIONS = {
         status_pending: "En análisis",
         label_server: "Servidor",
         label_reporter: "Denunciante",
+        label_source_protected: "Origen protegida por moderación",
         admin_no_reports: "No hay denuncias registradas.",
         uuid_missing: "UUID no informado",
         action_view: "Ver",
@@ -461,6 +468,8 @@ const TRANSLATIONS = {
         proof_view: "Ver Prueba",
         proof_view_count: "Ver {count} pruebas",
         proof_open_number: "Abrir prueba {number}",
+        action_like: "Apoyar",
+        detail_source_protected: "La identidad del denunciante está protegida en el área pública.",
         search_results_for: "{count} resultado(s) para \"{query}\".",
         search_public_count: "{count} denuncia(s) aprobadas visibles en la base pública."
     }
