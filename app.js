@@ -13,6 +13,7 @@ const API = {
     analyticsTrack: "/api/analytics/track",
     reportsPublic: "/api/reports/public",
     reportsCreate: "/api/reports/create",
+    reportsLike: "/api/reports/like",
     reportsMine: "/api/reports/mine",
     authRegister: "/api/auth/register",
     authLogin: "/api/auth/login",
@@ -88,7 +89,8 @@ function normalizeReports(list) {
         avatarUrl: report.avatarUrl || "",
         gotaleLookup: report.gotaleLookup || "",
         reporterName: report.reporterName || "",
-        reporterRole: report.reporterRole || "player"
+        reporterRole: report.reporterRole || "player",
+        likesCount: Number(report.likesCount || 0)
     }));
 }
 
@@ -364,7 +366,8 @@ async function submitReport(event) {
         status: "Em análise",
         createdAt: new Date().toISOString(),
         reporterName: currentUser.name,
-        reporterRole: currentUser.role
+        reporterRole: currentUser.role,
+        likesCount: 0
     };
 
     reports.push(localReport);
@@ -823,31 +826,45 @@ function handleSearchEnter(event) {
     viewReportDetails(match.id);
 }
 
-function toggleReportLike(reportId) {
+async function toggleReportLike(reportId) {
     if (!reportId) {
         return;
     }
 
-    const currentCount = getLikeCount(reportId);
     if (hasLikedReport(reportId)) {
-        likedReports[reportId] = Math.max(currentCount - 1, 0);
-        if (likedReports[reportId] === 0) {
-            delete likedReports[reportId];
-        }
-    } else {
-        likedReports[reportId] = currentCount + 1;
+        return;
     }
 
+    if (canUseBackend()) {
+        const response = await safeFetchJson(API.reportsLike, {
+            method: "POST",
+            headers: jsonHeaders(),
+            body: JSON.stringify({ id: reportId })
+        });
+
+        if (!response?.ok || !response.report) {
+            return;
+        }
+
+        updateReportInMemory(response.report);
+    } else {
+        const report = reports.find((item) => item.id === reportId);
+        if (report) {
+            report.likesCount = Number(report.likesCount || 0) + 1;
+        }
+    }
+
+    likedReports[reportId] = true;
     localStorage.setItem(STORAGE_KEYS.reportLikes, JSON.stringify(likedReports));
     renderReports(getCurrentlyRenderedReports());
 }
 
 function hasLikedReport(reportId) {
-    return Number(likedReports[reportId] || 0) > 0;
+    return Boolean(likedReports[reportId]);
 }
 
 function getLikeCount(reportId) {
-    return Number(likedReports[reportId] || 0);
+    return Number(reports.find((report) => report.id === reportId)?.likesCount || 0);
 }
 
 function getCurrentlyRenderedReports() {
@@ -862,6 +879,18 @@ function getCurrentlyRenderedReports() {
         report.status === "Aprovado" &&
         [report.playerName, report.uuid, report.server].filter(Boolean).some((value) => normalizeText(value).includes(normalizedQuery))
     );
+}
+
+function updateReportInMemory(updatedReport) {
+    const index = reports.findIndex((item) => item.id === updatedReport.id);
+    if (index >= 0) {
+        reports[index] = {
+            ...reports[index],
+            ...updatedReport,
+            proofLinks: normalizeProofLinks(updatedReport.proofLinks),
+            likesCount: Number(updatedReport.likesCount || 0)
+        };
+    }
 }
 
 function jsonHeaders() {

@@ -208,7 +208,8 @@ export function publicReport(report) {
         avatarUrl: report.avatarUrl || "",
         gotaleLookup: report.gotaleLookup || "",
         reporterName: report.reporterName || "",
-        reporterRole: report.reporterRole || "player"
+        reporterRole: report.reporterRole || "player",
+        likesCount: Number(report.likesCount || 0)
     };
 }
 
