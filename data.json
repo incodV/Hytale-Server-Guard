@@ -1,0 +1,37 @@
+{
+  "reports": [
+    {
+      "id": "1",
+      "playerName": "GrieferKing",
+      "uuid": "550e8400-e29b-41d4-a716-446655440000",
+      "discord": "griefer#1234",
+      "server": "SurvivalCraft",
+      "reason": "Uso de client alternativo (Fly e Killaura) durante evento de PvP.",
+      "proofLinks": "https://prnt.sc/example1",
+      "status": "Aprovado",
+      "createdAt": "2026-04-20T10:30:00Z"
+    },
+    {
+      "id": "2",
+      "playerName": "TrollMaster",
+      "uuid": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+      "discord": "troll#9999",
+      "server": "CreativeWorld",
+      "reason": "Destruição massiva de construções de outros jogadores sem permissão.",
+      "proofLinks": "https://prnt.sc/example2",
+      "status": "Em análise",
+      "createdAt": "2026-04-25T14:15:00Z"
+    },
+    {
+      "id": "3",
+      "playerName": "NiceGuy",
+      "uuid": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+      "discord": "nice#0001",
+      "server": "RPGSever",
+      "reason": "Denúncia falsa por vingança após perder duelo.",
+      "proofLinks": "https://prnt.sc/example3",
+      "status": "Rejeitado",
+      "createdAt": "2026-04-27T09:00:00Z"
+    }
+  ]
+}

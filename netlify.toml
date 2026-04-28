@@ -1,0 +1,56 @@
+[build]
+  publish = "."
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/api/gotale/player"
+  to = "/.netlify/functions/gotale-player"
+  status = 200
+
+[[redirects]]
+  from = "/api/gotale/avatar"
+  to = "/.netlify/functions/gotale-avatar"
+  status = 200
+
+[[redirects]]
+  from = "/api/auth/register"
+  to = "/.netlify/functions/auth-register"
+  status = 200
+
+[[redirects]]
+  from = "/api/auth/login"
+  to = "/.netlify/functions/auth-login"
+  status = 200
+
+[[redirects]]
+  from = "/api/reports/public"
+  to = "/.netlify/functions/reports-public"
+  status = 200
+
+[[redirects]]
+  from = "/api/reports/create"
+  to = "/.netlify/functions/reports-create"
+  status = 200
+
+[[redirects]]
+  from = "/api/reports/mine"
+  to = "/.netlify/functions/reports-mine"
+  status = 200
+
+[[redirects]]
+  from = "/api/reports/admin"
+  to = "/.netlify/functions/reports-admin"
+  status = 200
+
+[[redirects]]
+  from = "/api/reports/admin/update"
+  to = "/.netlify/functions/reports-admin-update"
+  status = 200
+
+[[redirects]]
+  from = "/api/reports/admin/delete"
+  to = "/.netlify/functions/reports-admin-delete"
+  status = 200

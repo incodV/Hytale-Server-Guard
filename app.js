@@ -1,0 +1,1057 @@
+let reports = [];
+let currentUser = null;
+let userSessionToken = "";
+let isAdmin = false;
+let isViewingAdmin = false;
+let adminAuth = null;
+
+const STORAGE_KEYS = {
+    localReports: "hytaleguard_reports",
+    userSession: "hytaleguard_user_session",
+    adminAuth: "hytaleguard_admin_auth"
+};
+
+const API = {
+    gotalePlayer: "/api/gotale/player",
+    reportsPublic: "/api/reports/public",
+    reportsCreate: "/api/reports/create",
+    reportsMine: "/api/reports/mine",
+    authRegister: "/api/auth/register",
+    authLogin: "/api/auth/login",
+    adminReports: "/api/reports/admin",
+    adminUpdate: "/api/reports/admin/update",
+    adminDelete: "/api/reports/admin/delete"
+};
+
+document.addEventListener("DOMContentLoaded", async () => {
+    setCurrentYear();
+    loadStoredSessions();
+    setupEventListeners();
+    await loadData();
+    await refreshUI();
+});
+
+function loadStoredSessions() {
+    try {
+        const savedUserSession = JSON.parse(localStorage.getItem(STORAGE_KEYS.userSession) || "null");
+        currentUser = savedUserSession?.user || null;
+        userSessionToken = savedUserSession?.token || "";
+    } catch (error) {
+        currentUser = null;
+        userSessionToken = "";
+    }
+
+    try {
+        adminAuth = JSON.parse(localStorage.getItem(STORAGE_KEYS.adminAuth) || "null");
+        isAdmin = Boolean(adminAuth?.username && adminAuth?.password);
+    } catch (error) {
+        adminAuth = null;
+        isAdmin = false;
+    }
+}
+
+async function loadData() {
+    if (canUseBackend()) {
+        const response = await safeFetchJson(API.reportsPublic);
+        if (response?.ok) {
+            reports = normalizeReports(response.reports);
+            return;
+        }
+    }
+
+    const localData = localStorage.getItem(STORAGE_KEYS.localReports);
+    if (localData) {
+        try {
+            reports = normalizeReports(JSON.parse(localData));
+            return;
+        } catch (error) {
+            console.error("Erro ao ler dados locais:", error);
+        }
+    }
+
+    try {
+        const response = await fetch("data.json");
+        const data = await response.json();
+        reports = normalizeReports(data.reports || []);
+        localStorage.setItem(STORAGE_KEYS.localReports, JSON.stringify(reports));
+    } catch (error) {
+        console.error("Erro ao carregar dados iniciais:", error);
+        reports = [];
+    }
+}
+
+function normalizeReports(list) {
+    return (Array.isArray(list) ? list : []).map((report) => ({
+        ...report,
+        proofLinks: normalizeProofLinks(report.proofLinks),
+        avatarUrl: report.avatarUrl || "",
+        gotaleLookup: report.gotaleLookup || "",
+        reporterName: report.reporterName || "",
+        reporterRole: report.reporterRole || "player"
+    }));
+}
+
+async function refreshUI(filteredData = null) {
+    updateHeaderState();
+    updateHeroMetrics();
+    renderReports(filteredData);
+    renderAccountArea();
+
+    if (isAdmin) {
+        await loadAdminReports();
+    } else {
+        toggleAdminView(false);
+    }
+}
+
+function updateHeaderState() {
+    const loginBtn = document.getElementById("loginBtn");
+    const accountBtn = document.getElementById("accountBtn");
+    const adminNavLink = document.getElementById("adminNavLink");
+    const accountActionBtn = document.getElementById("accountActionBtn");
+    const accountIntro = document.getElementById("accountIntro");
+
+    if (loginBtn) {
+        loginBtn.textContent = isAdmin ? `Sair (${adminAuth.username})` : "Admin Login";
+    }
+
+    if (accountBtn) {
+        accountBtn.textContent = currentUser ? `Conta: ${currentUser.name}` : "Entrar / Criar Conta";
+    }
+
+    if (accountActionBtn) {
+        accountActionBtn.textContent = currentUser ? "Atualizar Painel" : "Criar Conta";
+    }
+
+    if (adminNavLink) {
+        adminNavLink.hidden = !isAdmin;
+    }
+
+    if (currentUser) {
+        accountIntro.textContent = `Sessão ativa como ${currentUser.role === "owner" ? "dono de servidor" : "jogador"}: acompanhe seus envios abaixo.`;
+    } else {
+        accountIntro.textContent = "Crie uma conta como jogador ou dono de servidor para acompanhar o status dos seus envios.";
+    }
+}
+
+function updateHeroMetrics() {
+    const approved = reports.filter((report) => report.status === "Aprovado").length;
+    const pending = reports.filter((report) => report.status === "Em análise").length;
+    const members = new Set(reports.map((report) => report.reporterName).filter(Boolean)).size;
+
+    document.getElementById("heroApprovedCount").textContent = approved;
+    document.getElementById("heroPendingCount").textContent = pending;
+    document.getElementById("heroMemberCount").textContent = members || 0;
+}
+
+function toggleAdminView(show) {
+    if (!isAdmin && show) {
+        return;
+    }
+
+    isViewingAdmin = show;
+    const publicView = document.getElementById("publicView");
+    const adminPanel = document.getElementById("adminPanel");
+
+    if (publicView) {
+        publicView.hidden = show;
+    }
+
+    if (adminPanel) {
+        adminPanel.hidden = !show;
+    }
+}
+
+function renderReports(dataToRender = null) {
+    if (isViewingAdmin) {
+        return;
+    }
+
+    const grid = document.getElementById("reportsGrid");
+    if (!grid) {
+        return;
+    }
+
+    const publicReports = dataToRender || reports.filter((report) => report.status === "Aprovado");
+    const ordered = [...publicReports].sort(sortByNewest);
+
+    updateSearchMeta(ordered.length);
+
+    if (ordered.length === 0) {
+        grid.innerHTML = '<p class="empty-state">Nenhuma denúncia aprovada encontrada para essa busca.</p>';
+        return;
+    }
+
+    grid.innerHTML = ordered
+        .map((report) => {
+            const uuid = report.uuid && report.uuid !== "N/A" ? escapeHtml(report.uuid) : "UUID não informado";
+
+            return `
+                <article class="report-card">
+                    <div class="report-header">
+                        <div class="report-identity">
+                            ${buildAvatarMarkup(report)}
+                            <div class="player-info">
+                                <h3>${escapeHtml(report.playerName)}</h3>
+                                <p>${uuid}</p>
+                            </div>
+                        </div>
+                        <span class="status-badge status-aprovado">Aprovado</span>
+                    </div>
+
+                    <div class="report-body">
+                        <p>${escapeHtml(report.reason)}</p>
+                        <div class="report-body-meta">
+                            <span>Servidor: ${escapeHtml(report.server)}</span>
+                            <span>Denunciante: ${escapeHtml(report.reporterName || report.discord)}</span>
+                        </div>
+                    </div>
+
+                    <div class="report-footer">
+                        <span>${formatDate(report.createdAt)}</span>
+                        ${buildProofLinksSummary(report.proofLinks)}
+                    </div>
+                </article>
+            `;
+        })
+        .join("");
+}
+
+function renderAdminPanel() {
+    const tableBody = document.getElementById("adminTableBody");
+    if (!tableBody) {
+        return;
+    }
+
+    const sortedReports = [...reports].sort(sortByNewest);
+    document.getElementById("statPending").textContent = sortedReports.filter((report) => report.status === "Em análise").length;
+    document.getElementById("statApproved").textContent = sortedReports.filter((report) => report.status === "Aprovado").length;
+    document.getElementById("statTotal").textContent = sortedReports.length;
+
+    if (sortedReports.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="5">Nenhuma denúncia cadastrada.</td></tr>';
+        return;
+    }
+
+    tableBody.innerHTML = sortedReports.map((report) => `
+        <tr>
+            <td>
+                <div class="report-identity">
+                    ${buildAvatarMarkup(report)}
+                    <div>
+                        <strong>${escapeHtml(report.playerName)}</strong><br>
+                        <small>${escapeHtml(report.uuid || "UUID não informado")}</small>
+                    </div>
+                </div>
+            </td>
+            <td>${escapeHtml(report.server)}</td>
+            <td><span class="status-badge ${getStatusClass(report.status)}">${escapeHtml(report.status)}</span></td>
+            <td>${formatDate(report.createdAt)}</td>
+            <td>
+                <div class="admin-table-actions">
+                    <button class="btn-view" type="button" data-action="view" data-id="${report.id}">Ver</button>
+                    ${report.status !== "Aprovado" ? `<button class="btn-approve" type="button" data-action="approve" data-id="${report.id}">Aprovar</button>` : ""}
+                    ${report.status !== "Rejeitado" ? `<button class="btn-reject" type="button" data-action="reject" data-id="${report.id}">Rejeitar</button>` : ""}
+                    <button class="btn-delete" type="button" data-action="delete" data-id="${report.id}">Excluir</button>
+                </div>
+            </td>
+        </tr>
+    `).join("");
+}
+
+function renderAccountArea() {
+    const accountShell = document.getElementById("accountShell");
+    if (!accountShell) {
+        return;
+    }
+
+    if (!currentUser) {
+        accountShell.innerHTML = `
+            <div class="account-card">
+                <p class="account-empty">Nenhuma sessão ativa no momento.</p>
+            </div>
+        `;
+        return;
+    }
+
+    accountShell.innerHTML = `
+        <div class="account-grid">
+            <div class="account-card">
+                <div class="account-meta">
+                    <p class="section-kicker">Perfil</p>
+                    <h3>${escapeHtml(currentUser.name)}</h3>
+                    <p>Email: ${escapeHtml(currentUser.email)}</p>
+                    <p>Tipo: ${currentUser.role === "owner" ? "Dono de servidor" : "Jogador"}</p>
+                    <p>${currentUser.serverName ? `Servidor: ${escapeHtml(currentUser.serverName)}` : "Sem servidor vinculado."}</p>
+                    <div class="account-actions">
+                        <button class="btn-secondary" id="refreshMyReportsBtn" type="button">Atualizar Denúncias</button>
+                        <button class="btn-login" id="logoutUserBtn" type="button">Sair da Conta</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="account-card">
+                <div class="account-reports-head">
+                    <p class="section-kicker">Minhas Denúncias</p>
+                    <h3>Acompanhe o andamento dos seus envios</h3>
+                    <p id="myReportsMeta">Carregando suas denúncias...</p>
+                </div>
+                <div class="my-reports-list" id="myReportsList">
+                    <p class="account-empty">Carregando...</p>
+                </div>
+            </div>
+        </div>
+    `;
+
+    bindIfExists("refreshMyReportsBtn", "click", loadMyReports);
+    bindIfExists("logoutUserBtn", "click", logoutUser);
+    loadMyReports();
+}
+
+async function loadMyReports() {
+    const meta = document.getElementById("myReportsMeta");
+    const list = document.getElementById("myReportsList");
+
+    if (!meta || !list || !currentUser || !userSessionToken) {
+        return;
+    }
+
+    if (!canUseBackend()) {
+        meta.textContent = "Nenhuma denúncia encontrada para esta conta.";
+        list.innerHTML = '<p class="account-empty">Assim que houver denúncias vinculadas a esta conta, elas aparecerão aqui.</p>';
+        return;
+    }
+
+    meta.textContent = "Atualizando...";
+    const response = await safeFetchJson(API.reportsMine, {
+        headers: authHeaders()
+    });
+
+    if (!response?.ok) {
+        meta.textContent = "Não foi possível carregar suas denúncias agora.";
+        list.innerHTML = '<p class="account-empty">Tente novamente em instantes.</p>';
+        return;
+    }
+
+    const myReports = normalizeReports(response.reports);
+    meta.textContent = `${myReports.length} denúncia(s) vinculadas à sua conta.`;
+
+    if (myReports.length === 0) {
+        list.innerHTML = '<p class="account-empty">Você ainda não enviou denúncias com esta conta.</p>';
+        return;
+    }
+
+    list.innerHTML = myReports.map((report) => `
+        <article class="my-report-card">
+            <strong>${escapeHtml(report.playerName)}</strong>
+            <p>Status: <span class="status-badge ${getStatusClass(report.status)}">${escapeHtml(report.status)}</span></p>
+            <p>Servidor: ${escapeHtml(report.server)}</p>
+            <p>Data: ${formatDate(report.createdAt)}</p>
+        </article>
+    `).join("");
+}
+
+function handleSearch(query) {
+    if (isViewingAdmin) {
+        return;
+    }
+
+    const normalizedQuery = normalizeText(query);
+    if (!normalizedQuery) {
+        renderReports();
+        return;
+    }
+
+    const filtered = reports.filter((report) =>
+        report.status === "Aprovado" &&
+        [report.playerName, report.uuid, report.server].filter(Boolean).some((value) => normalizeText(value).includes(normalizedQuery))
+    );
+
+    renderReports(filtered);
+}
+
+async function submitReport(event) {
+    event.preventDefault();
+
+    const form = event.target;
+    const feedback = document.getElementById("reportFeedback");
+    const submitButton = form.querySelector('button[type="submit"]');
+
+    if (!currentUser) {
+        showFeedback(feedback, "Entre na sua conta antes de enviar uma denúncia.", "error");
+        openModal("accountModal");
+        return;
+    }
+
+    const formData = new FormData(form);
+    let report = {
+        playerName: sanitizeField(formData.get("playerName")),
+        uuid: sanitizeField(formData.get("uuid")) || "N/A",
+        discord: sanitizeField(formData.get("discord")),
+        server: sanitizeField(formData.get("server")),
+        reason: sanitizeField(formData.get("reason")),
+        proofLinks: sanitizeField(formData.get("proofLinks")),
+        avatarUrl: "",
+        gotaleLookup: ""
+    };
+
+    const validationError = validateReport(report);
+    if (validationError) {
+        showFeedback(feedback, validationError, "error");
+        return;
+    }
+
+    setButtonLoading(submitButton, true, "Consultando perfil...");
+    const enrichment = await enrichReportWithGotale(report);
+    report = enrichment.report;
+
+    if (canUseBackend()) {
+        const response = await safeFetchJson(API.reportsCreate, {
+            method: "POST",
+            headers: {
+                ...jsonHeaders(),
+                ...authHeaders()
+            },
+            body: JSON.stringify(report)
+        });
+
+        setButtonLoading(submitButton, false, "Enviar para Análise");
+
+        if (!response?.ok) {
+            showFeedback(feedback, response?.error || "Não foi possível salvar a denúncia agora.", "error");
+            return;
+        }
+
+        form.reset();
+        showFeedback(feedback, enrichment.note || "Denúncia enviada com sucesso. Você poderá acompanhar o status na área Minha Conta.", "success");
+        await loadData();
+        await refreshUI();
+        window.setTimeout(() => {
+            hideFeedback(feedback);
+            closeModal("reportModal");
+        }, 1600);
+        return;
+    }
+
+    const localReport = {
+        id: Date.now().toString(),
+        ...report,
+        status: "Em análise",
+        createdAt: new Date().toISOString(),
+        reporterName: currentUser.name,
+        reporterRole: currentUser.role
+    };
+
+    reports.push(localReport);
+    localStorage.setItem(STORAGE_KEYS.localReports, JSON.stringify(reports));
+    setButtonLoading(submitButton, false, "Enviar para Análise");
+    form.reset();
+    showFeedback(feedback, "Denúncia salva com sucesso.", "success");
+    await refreshUI();
+}
+
+function validateReport(report) {
+    if (!report.playerName || !report.discord || !report.server || !report.reason || !report.proofLinks) {
+        return "Preencha todos os campos obrigatórios antes de enviar.";
+    }
+
+    report.proofLinks = normalizeProofLinks(report.proofLinks);
+
+    if (report.proofLinks.length === 0) {
+        return "Informe pelo menos um link de prova.";
+    }
+
+    if (report.reason.length < 15) {
+        return "Explique o motivo com um pouco mais de contexto para facilitar a análise.";
+    }
+
+    if (report.uuid !== "N/A" && !isValidUuid(report.uuid)) {
+        return "O UUID informado não está no formato esperado.";
+    }
+
+    if (!report.proofLinks.every((link) => isValidProofLink(link))) {
+        return "Todos os links de prova precisam ser válidos do Lightshot, como prnt.sc ou lightshot.com.";
+    }
+
+    return "";
+}
+
+async function enrichReportWithGotale(report) {
+    if (!canUseBackend()) {
+        return {
+            report,
+            note: "Denúncia enviada com os dados informados."
+        };
+    }
+
+    const params = new URLSearchParams();
+    if (report.uuid && report.uuid !== "N/A") {
+        params.set("uuid", report.uuid);
+    } else {
+        params.set("player", report.playerName);
+    }
+
+    const response = await safeFetchJson(`${API.gotalePlayer}?${params.toString()}`);
+    if (!response?.ok) {
+        return {
+            report,
+            note: "Denúncia enviada. O avatar não pôde ser enriquecido agora."
+        };
+    }
+
+    return {
+        report: {
+            ...report,
+            playerName: sanitizeField(response.player) || report.playerName,
+            uuid: sanitizeField(response.uuid) || report.uuid,
+            avatarUrl: sanitizeField(response.avatarUrl),
+            gotaleLookup: sanitizeField(response.lookup)
+        },
+        note: "Denúncia enviada com avatar e perfil resolvidos pela Gotale."
+    };
+}
+
+async function handleRegister(event) {
+    event.preventDefault();
+    const feedback = document.getElementById("registerFeedback");
+
+    if (!canUseBackend()) {
+        showFeedback(feedback, "Não foi possível criar a conta neste momento.", "error");
+        return;
+    }
+
+    const formData = new FormData(event.target);
+    const payload = {
+        name: sanitizeField(formData.get("name")),
+        email: sanitizeField(formData.get("email")),
+        password: sanitizeField(formData.get("password")),
+        role: sanitizeField(formData.get("role")),
+        serverName: sanitizeField(formData.get("serverName"))
+    };
+
+    const response = await safeFetchJson(API.authRegister, {
+        method: "POST",
+        headers: jsonHeaders(),
+        body: JSON.stringify(payload)
+    });
+
+    if (!response?.ok) {
+        showFeedback(feedback, response?.error || "Não foi possível criar a conta.", "error");
+        return;
+    }
+
+    persistUserSession(response.token, response.user);
+    showFeedback(feedback, "Conta criada com sucesso.", "success");
+    event.target.reset();
+    await refreshUI();
+    closeModal("registerModal");
+    closeModal("accountModal");
+}
+
+async function handleUserLogin(event) {
+    event.preventDefault();
+    const feedback = document.getElementById("userLoginFeedback");
+
+    if (!canUseBackend()) {
+        showFeedback(feedback, "Não foi possível entrar na conta neste momento.", "error");
+        return;
+    }
+
+    const formData = new FormData(event.target);
+    const payload = {
+        email: sanitizeField(formData.get("email")),
+        password: sanitizeField(formData.get("password"))
+    };
+
+    const response = await safeFetchJson(API.authLogin, {
+        method: "POST",
+        headers: jsonHeaders(),
+        body: JSON.stringify(payload)
+    });
+
+    if (!response?.ok) {
+        showFeedback(feedback, response?.error || "Não foi possível entrar.", "error");
+        return;
+    }
+
+    persistUserSession(response.token, response.user);
+    showFeedback(feedback, "Login realizado com sucesso.", "success");
+    event.target.reset();
+    await refreshUI();
+    closeModal("accountModal");
+}
+
+function persistUserSession(token, user) {
+    currentUser = user;
+    userSessionToken = token;
+    localStorage.setItem(STORAGE_KEYS.userSession, JSON.stringify({ token, user }));
+}
+
+function logoutUser() {
+    currentUser = null;
+    userSessionToken = "";
+    localStorage.removeItem(STORAGE_KEYS.userSession);
+    refreshUI();
+}
+
+async function handleAdminLogin(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    const username = sanitizeField(formData.get("username"));
+    const password = sanitizeField(formData.get("password"));
+    const feedback = document.getElementById("loginFeedback");
+
+    if (!username || !password) {
+        showFeedback(feedback, "Informe usuário e senha.", "error");
+        return;
+    }
+
+    adminAuth = { username, password };
+    isAdmin = true;
+    localStorage.setItem(STORAGE_KEYS.adminAuth, JSON.stringify(adminAuth));
+
+    if (canUseBackend()) {
+        const response = await safeFetchJson(API.adminReports, {
+            headers: adminHeaders()
+        });
+
+        if (!response?.ok) {
+            isAdmin = false;
+            adminAuth = null;
+            localStorage.removeItem(STORAGE_KEYS.adminAuth);
+            showFeedback(feedback, response?.error || "Credenciais de admin inválidas.", "error");
+            return;
+        }
+    }
+
+    showFeedback(feedback, "Login de administrador realizado.", "success");
+    await refreshUI();
+    toggleAdminView(true);
+    closeModal("loginModal");
+}
+
+function toggleAdmin() {
+    if (isAdmin) {
+        isAdmin = false;
+        isViewingAdmin = false;
+        adminAuth = null;
+        localStorage.removeItem(STORAGE_KEYS.adminAuth);
+        refreshUI();
+        return;
+    }
+
+    openModal("loginModal");
+}
+
+async function loadAdminReports() {
+    if (!isAdmin) {
+        return;
+    }
+
+    if (canUseBackend()) {
+        const response = await safeFetchJson(API.adminReports, {
+            headers: adminHeaders()
+        });
+
+        if (response?.ok) {
+            reports = normalizeReports(response.reports);
+        }
+    }
+
+    renderAdminPanel();
+}
+
+async function updateStatus(id, status) {
+    if (canUseBackend() && isAdmin) {
+        const response = await safeFetchJson(API.adminUpdate, {
+            method: "POST",
+            headers: {
+                ...jsonHeaders(),
+                ...adminHeaders()
+            },
+            body: JSON.stringify({ id, status })
+        });
+
+        if (response?.ok) {
+            await loadData();
+            await refreshUI();
+        }
+        return;
+    }
+}
+
+async function deleteReport(id) {
+    if (!window.confirm("Excluir permanentemente esta denúncia?")) {
+        return;
+    }
+
+    if (canUseBackend() && isAdmin) {
+        const response = await safeFetchJson(API.adminDelete, {
+            method: "POST",
+            headers: {
+                ...jsonHeaders(),
+                ...adminHeaders()
+            },
+            body: JSON.stringify({ id })
+        });
+
+        if (response?.ok) {
+            await loadData();
+            await refreshUI();
+        }
+        return;
+    }
+}
+
+function viewReportDetails(id) {
+    const report = reports.find((item) => item.id === id);
+    if (!report) {
+        return;
+    }
+
+    const detailsContent = document.getElementById("detailsContent");
+    if (!detailsContent) {
+        return;
+    }
+
+    detailsContent.innerHTML = `
+        <div class="details-grid">
+            <div class="details-hero">
+                ${buildAvatarMarkup(report, "details")}
+                <div class="details-heading">
+                    <p class="section-kicker">Resumo da denúncia</p>
+                    <h2>${escapeHtml(report.playerName)}</h2>
+                    <p class="modal-intro">Use esta visão para revisar provas, origem e status atual do caso.</p>
+                </div>
+            </div>
+
+            <dl class="details-summary">
+                <div>
+                    <dt>Status</dt>
+                    <dd><span class="status-badge ${getStatusClass(report.status)}">${escapeHtml(report.status)}</span></dd>
+                </div>
+                <div>
+                    <dt>Data</dt>
+                    <dd>${formatDate(report.createdAt)}</dd>
+                </div>
+                <div>
+                    <dt>UUID</dt>
+                    <dd>${escapeHtml(report.uuid || "N/A")}</dd>
+                </div>
+                <div>
+                    <dt>Servidor</dt>
+                    <dd>${escapeHtml(report.server)}</dd>
+                </div>
+                <div>
+                    <dt>Conta autora</dt>
+                    <dd>${escapeHtml(report.reporterName || report.discord)}</dd>
+                </div>
+                <div>
+                    <dt>Avatar</dt>
+                    <dd>${report.avatarUrl ? "Consultado automaticamente via Gotale" : "Não disponível neste registro"}</dd>
+                </div>
+                <div>
+                    <dt>Prova</dt>
+                    <dd>${buildProofLinksList(report.proofLinks)}</dd>
+                </div>
+            </dl>
+
+            <div class="details-block">
+                <p class="section-kicker">Motivo informado</p>
+                <p>${escapeHtml(report.reason)}</p>
+            </div>
+        </div>
+    `;
+
+    openModal("detailsModal");
+}
+
+function setupEventListeners() {
+    bindIfExists("searchInput", "input", (event) => handleSearch(event.target.value));
+    bindIfExists("btnOpenReport", "click", () => openModal("reportModal"));
+    bindIfExists("loginBtn", "click", toggleAdmin);
+    bindIfExists("accountBtn", "click", () => openModal("accountModal"));
+    bindIfExists("accountActionBtn", "click", () => currentUser ? loadMyReports() : openModal("accountModal"));
+    bindIfExists("openRegisterModalBtn", "click", () => {
+        closeModal("accountModal");
+        openModal("registerModal");
+    });
+    bindIfExists("btnBackToSite", "click", () => {
+        isViewingAdmin = false;
+        toggleAdminView(false);
+        renderReports();
+    });
+    bindIfExists("reportForm", "submit", submitReport);
+    bindIfExists("loginForm", "submit", handleAdminLogin);
+    bindIfExists("registerForm", "submit", handleRegister);
+    bindIfExists("userLoginForm", "submit", handleUserLogin);
+    bindIfExists("adminNavLink", "click", (event) => {
+        event.preventDefault();
+        toggleAdminView(true);
+        renderAdminPanel();
+    });
+
+    document.querySelectorAll("[data-close-modal]").forEach((button) => {
+        button.addEventListener("click", closeModals);
+    });
+
+    document.querySelectorAll(".modal").forEach((modal) => {
+        modal.addEventListener("click", (event) => {
+            if (event.target === modal) {
+                closeModals();
+            }
+        });
+    });
+
+    bindIfExists("adminTableBody", "click", (event) => {
+        const actionButton = event.target.closest("button[data-action]");
+        if (!actionButton) {
+            return;
+        }
+
+        const { action, id } = actionButton.dataset;
+        if (action === "view") {
+            viewReportDetails(id);
+        } else if (action === "approve") {
+            updateStatus(id, "Aprovado");
+        } else if (action === "reject") {
+            updateStatus(id, "Rejeitado");
+        } else if (action === "delete") {
+            deleteReport(id);
+        }
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+            closeModals();
+        }
+    });
+}
+
+function bindIfExists(id, eventName, handler) {
+    const element = document.getElementById(id);
+    if (element) {
+        element.addEventListener(eventName, handler);
+    }
+}
+
+function openModal(id) {
+    const modal = document.getElementById(id);
+    if (!modal) {
+        return;
+    }
+
+    modal.classList.add("active");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+}
+
+function closeModal(id) {
+    const modal = document.getElementById(id);
+    if (!modal) {
+        return;
+    }
+
+    modal.classList.remove("active");
+    modal.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+}
+
+function closeModals() {
+    document.querySelectorAll(".modal.active").forEach((modal) => closeModal(modal.id));
+}
+
+function buildAvatarMarkup(report, variant = "card") {
+    const avatarUrl = report.avatarUrl || getDerivedAvatarUrl(report);
+    const className = variant === "details" ? "details-avatar" : "report-avatar";
+    const fallbackClassName = variant === "details" ? "details-avatar details-avatar-fallback" : "report-avatar report-avatar-fallback";
+    const playerName = escapeHtml(report.playerName || "Jogador");
+
+    if (avatarUrl) {
+        return `<img class="${className}" src="${escapeAttribute(avatarUrl)}" alt="Avatar de ${playerName}" loading="lazy">`;
+    }
+
+    return `<span class="${fallbackClassName}" aria-hidden="true">${escapeHtml(getInitials(report.playerName))}</span>`;
+}
+
+function buildProofLinksSummary(links) {
+    const normalized = normalizeProofLinks(links);
+    if (normalized.length === 0) {
+        return '<span>Sem prova</span>';
+    }
+
+    if (normalized.length === 1) {
+        return `<a href="${escapeAttribute(normalized[0])}" target="_blank" rel="noreferrer">Ver Prova</a>`;
+    }
+
+    return `<a href="${escapeAttribute(normalized[0])}" target="_blank" rel="noreferrer">Ver ${normalized.length} provas</a>`;
+}
+
+function buildProofLinksList(links) {
+    const normalized = normalizeProofLinks(links);
+    if (normalized.length === 0) {
+        return "Sem links de prova.";
+    }
+
+    return normalized
+        .map((link, index) => `<a class="details-proof-link" href="${escapeAttribute(link)}" target="_blank" rel="noreferrer">Abrir prova ${index + 1}</a>`)
+        .join("<br>");
+}
+
+function getDerivedAvatarUrl(report) {
+    const lookup = sanitizeField(report.gotaleLookup);
+    if (!lookup || !canUseBackend()) {
+        return "";
+    }
+
+    return `/api/gotale/avatar?player=${encodeURIComponent(lookup)}`;
+}
+
+function updateSearchMeta(count) {
+    const meta = document.getElementById("searchMeta");
+    const searchInput = document.getElementById("searchInput");
+    if (!meta || !searchInput) {
+        return;
+    }
+
+    const value = searchInput.value.trim();
+    meta.textContent = value ? `${count} resultado(s) para "${value}".` : `${count} denúncia(s) aprovadas visíveis na base pública.`;
+}
+
+function canUseBackend() {
+    return window.location.protocol !== "file:";
+}
+
+async function safeFetchJson(url, options = {}) {
+    try {
+        const response = await fetch(url, options);
+        const data = await response.json();
+        return response.ok ? data : { ok: false, ...data };
+    } catch (error) {
+        console.error("Erro de rede:", error);
+        return null;
+    }
+}
+
+function jsonHeaders() {
+    return {
+        "content-type": "application/json"
+    };
+}
+
+function authHeaders() {
+    return userSessionToken ? { authorization: `Bearer ${userSessionToken}` } : {};
+}
+
+function adminHeaders() {
+    return adminAuth ? { "x-admin-user": adminAuth.username, "x-admin-pass": adminAuth.password } : {};
+}
+
+function getStatusClass(status) {
+    if (status === "Aprovado") {
+        return "status-aprovado";
+    }
+    if (status === "Rejeitado") {
+        return "status-rejeitado";
+    }
+    return "status-analise";
+}
+
+function sortByNewest(a, b) {
+    return new Date(b.createdAt) - new Date(a.createdAt);
+}
+
+function formatDate(value) {
+    return new Date(value).toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+    });
+}
+
+function normalizeText(value) {
+    return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
+}
+
+function sanitizeField(value) {
+    return String(value || "").trim();
+}
+
+function normalizeProofLinks(value) {
+    if (Array.isArray(value)) {
+        return value.map((item) => sanitizeField(item)).filter(Boolean);
+    }
+
+    return String(value || "")
+        .split(/\r?\n|,/)
+        .map((item) => sanitizeField(item))
+        .filter(Boolean);
+}
+
+function getInitials(value) {
+    const parts = sanitizeField(value).split(/\s+/).filter(Boolean).slice(0, 2);
+    return parts.length ? parts.map((part) => part[0].toUpperCase()).join("") : "HG";
+}
+
+function escapeHtml(value) {
+    return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function escapeAttribute(value) {
+    return escapeHtml(value).replace(/`/g, "&#96;");
+}
+
+function isValidUuid(value) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+function isValidProofLink(value) {
+    try {
+        const url = new URL(value);
+        return ["prnt.sc", "www.prnt.sc", "lightshot.com", "www.lightshot.com"].includes(url.hostname.toLowerCase());
+    } catch (error) {
+        return false;
+    }
+}
+
+function showFeedback(element, message, type) {
+    if (!element) {
+        return;
+    }
+    element.textContent = message;
+    element.className = `form-feedback ${type}`;
+    element.hidden = false;
+}
+
+function hideFeedback(element) {
+    if (!element) {
+        return;
+    }
+    element.hidden = true;
+    element.textContent = "";
+    element.className = "form-feedback";
+}
+
+function setButtonLoading(button, isLoading, label) {
+    if (!button) {
+        return;
+    }
+    button.disabled = isLoading;
+    button.textContent = label;
+}
+
+function setCurrentYear() {
+    const element = document.getElementById("currentYear");
+    if (element) {
+        element.textContent = new Date().getFullYear();
+    }
+}
