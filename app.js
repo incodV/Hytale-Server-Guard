@@ -145,7 +145,7 @@ function renderReports(dataToRender = null) {
             const uuid = report.uuid && report.uuid !== "N/A" ? escapeHtml(report.uuid) : "UUID não informado";
 
             return `
-                <article class="report-card">
+                <article class="report-card report-card-compact" data-report-id="${escapeAttribute(report.id)}">
                     <div class="report-header">
                         <div class="report-identity">
                             ${buildAvatarMarkup(report)}
@@ -158,7 +158,7 @@ function renderReports(dataToRender = null) {
                     </div>
 
                     <div class="report-body">
-                        <p>${escapeHtml(report.reason)}</p>
+                        <p>${escapeHtml(excerptText(report.reason, 220))}</p>
                         <div class="report-body-meta">
                             <span>${escapeHtml(t("label_server"))}: ${escapeHtml(report.server)}</span>
                             <span>${escapeHtml(t("label_reporter"))}: ${escapeHtml(report.reporterName || report.discord)}</span>
@@ -167,7 +167,10 @@ function renderReports(dataToRender = null) {
 
                     <div class="report-footer">
                         <span>${formatDate(report.createdAt)}</span>
-                        ${buildProofLinksSummary(report.proofLinks)}
+                        <div class="report-footer-actions">
+                            <span>${buildProofLinksSummary(report.proofLinks)}</span>
+                            <button class="btn-view" type="button" data-view-report="${escapeAttribute(report.id)}">Ver detalhes</button>
+                        </div>
                     </div>
                 </article>
             `;
@@ -584,7 +587,7 @@ function viewReportDetails(id) {
                     <dd>${report.avatarUrl ? "Consultado automaticamente via Gotale" : "Não disponível neste registro"}</dd>
                 </div>
                 <div>
-                    <dt>Prova</dt>
+                    <dt>Provas</dt>
                     <dd>${buildProofLinksList(report.proofLinks)}</dd>
                 </div>
             </dl>
@@ -616,6 +619,18 @@ function setupEventListeners() {
     bindIfExists("loginForm", "submit", handleAdminLogin);
     bindIfExists("registerForm", "submit", handleRegister);
     bindIfExists("userLoginForm", "submit", handleUserLogin);
+
+    const reportsGrid = document.getElementById("reportsGrid");
+    if (reportsGrid) {
+        reportsGrid.addEventListener("click", (event) => {
+            const trigger = event.target.closest("[data-view-report]");
+            if (!trigger) {
+                return;
+            }
+
+            viewReportDetails(trigger.dataset.viewReport);
+        });
+    }
 
     document.querySelectorAll("[data-close-modal]").forEach((button) => {
         button.addEventListener("click", closeModals);
@@ -685,14 +700,14 @@ function buildAvatarMarkup(report, variant = "card") {
 function buildProofLinksSummary(links) {
     const normalized = normalizeProofLinks(links);
     if (normalized.length === 0) {
-        return `<span>${escapeHtml(t("proof_none"))}</span>`;
+        return escapeHtml(t("proof_none"));
     }
 
     if (normalized.length === 1) {
-        return `<a href="${escapeAttribute(normalized[0])}" target="_blank" rel="noreferrer">${escapeHtml(t("proof_view"))}</a>`;
+        return "1 prova anexada";
     }
 
-    return `<a href="${escapeAttribute(normalized[0])}" target="_blank" rel="noreferrer">${escapeHtml(t("proof_view_count").replace("{count}", normalized.length))}</a>`;
+    return `${normalized.length} provas anexadas`;
 }
 
 function buildProofLinksList(links) {
@@ -753,6 +768,15 @@ function trackVisit(page) {
         headers: jsonHeaders(),
         body: JSON.stringify({ page })
     });
+}
+
+function excerptText(value, maxLength = 220) {
+    const text = sanitizeField(value).replace(/\s+/g, " ");
+    if (text.length <= maxLength) {
+        return text;
+    }
+
+    return `${text.slice(0, maxLength - 1).trimEnd()}…`;
 }
 
 function jsonHeaders() {

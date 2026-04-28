@@ -198,12 +198,29 @@ function buildWebhookAvatar(request) {
 }
 
 function formatProofLinks(proofLinks) {
-    const links = normalizeLinks(proofLinks).slice(0, 3);
+    const links = normalizeLinks(proofLinks);
     if (links.length === 0) {
         return "Sem links informados.";
     }
 
-    return links.map((link, index) => `[Prova ${index + 1}](${link})`).join("\n");
+    const lines = [];
+    let currentLength = 0;
+
+    links.forEach((link, index) => {
+        const line = `[Prova ${index + 1}](${link})`;
+        if (currentLength + line.length + 1 > 950) {
+            return;
+        }
+
+        lines.push(line);
+        currentLength += line.length + 1;
+    });
+
+    if (lines.length < links.length) {
+        lines.push(`+ ${links.length - lines.length} link(s) adicional(is)`);
+    }
+
+    return lines.join("\n");
 }
 
 function normalizeLinks(value) {

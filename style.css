@@ -487,6 +487,10 @@ section {
     padding: 24px;
 }
 
+.report-card-compact {
+    align-content: start;
+}
+
 .report-header {
     display: flex;
     justify-content: space-between;
@@ -567,6 +571,10 @@ section {
 
 .report-body p {
     color: var(--text-soft);
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .report-body-meta {
@@ -586,10 +594,23 @@ section {
     font-size: 0.86rem;
 }
 
+.report-footer-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
 .report-footer a,
 .details-proof-link {
     color: var(--accent-strong);
     text-decoration: none;
+}
+
+.details-proof-link {
+    display: inline-block;
+    margin-bottom: 8px;
 }
 
 .loading-state,
