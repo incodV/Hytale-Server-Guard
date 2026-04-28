@@ -31,6 +31,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     await refreshUI();
 });
 
+document.addEventListener("languagechange", () => {
+    refreshUI();
+});
+
 function loadStoredSessions() {
     try {
         const savedUserSession = JSON.parse(localStorage.getItem(STORAGE_KEYS.userSession) || "null");
@@ -116,11 +120,11 @@ function updateHeaderState() {
     }
 
     if (accountBtn) {
-        accountBtn.textContent = currentUser ? `Conta: ${currentUser.name}` : "Entrar / Criar Conta";
+        accountBtn.textContent = currentUser ? `${t("nav_account")}: ${currentUser.name}` : t("account_login_create");
     }
 
     if (accountActionBtn) {
-        accountActionBtn.textContent = currentUser ? "Atualizar Painel" : "Criar Conta";
+        accountActionBtn.textContent = currentUser ? t("account_refresh") : t("account_create");
     }
 
     if (adminNavLink) {
@@ -128,9 +132,11 @@ function updateHeaderState() {
     }
 
     if (currentUser) {
-        accountIntro.textContent = `Sessão ativa como ${currentUser.role === "owner" ? "dono de servidor" : "jogador"}: acompanhe seus envios abaixo.`;
+        accountIntro.textContent = currentUser.role === "owner"
+            ? t("account_intro_owner")
+            : t("account_intro_player");
     } else {
-        accountIntro.textContent = "Crie uma conta como jogador ou dono de servidor para acompanhar o status dos seus envios.";
+        accountIntro.textContent = t("account_intro_guest");
     }
 }
 
@@ -178,7 +184,7 @@ function renderReports(dataToRender = null) {
     updateSearchMeta(ordered.length);
 
     if (ordered.length === 0) {
-        grid.innerHTML = '<p class="empty-state">Nenhuma denúncia aprovada encontrada para essa busca.</p>';
+        grid.innerHTML = `<p class="empty-state">${escapeHtml(t("reports_empty"))}</p>`;
         return;
     }
 
@@ -196,14 +202,14 @@ function renderReports(dataToRender = null) {
                                 <p>${uuid}</p>
                             </div>
                         </div>
-                        <span class="status-badge status-aprovado">Aprovado</span>
+                        <span class="status-badge status-aprovado">${escapeHtml(t("status_approved"))}</span>
                     </div>
 
                     <div class="report-body">
                         <p>${escapeHtml(report.reason)}</p>
                         <div class="report-body-meta">
-                            <span>Servidor: ${escapeHtml(report.server)}</span>
-                            <span>Denunciante: ${escapeHtml(report.reporterName || report.discord)}</span>
+                            <span>${escapeHtml(t("label_server"))}: ${escapeHtml(report.server)}</span>
+                            <span>${escapeHtml(t("label_reporter"))}: ${escapeHtml(report.reporterName || report.discord)}</span>
                         </div>
                     </div>
 
@@ -229,7 +235,7 @@ function renderAdminPanel() {
     document.getElementById("statTotal").textContent = sortedReports.length;
 
     if (sortedReports.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="5">Nenhuma denúncia cadastrada.</td></tr>';
+        tableBody.innerHTML = `<tr><td colspan="5">${escapeHtml(t("admin_no_reports"))}</td></tr>`;
         return;
     }
 
@@ -240,7 +246,7 @@ function renderAdminPanel() {
                     ${buildAvatarMarkup(report)}
                     <div>
                         <strong>${escapeHtml(report.playerName)}</strong><br>
-                        <small>${escapeHtml(report.uuid || "UUID não informado")}</small>
+                        <small>${escapeHtml(report.uuid || t("uuid_missing"))}</small>
                     </div>
                 </div>
             </td>
@@ -249,10 +255,10 @@ function renderAdminPanel() {
             <td>${formatDate(report.createdAt)}</td>
             <td>
                 <div class="admin-table-actions">
-                    <button class="btn-view" type="button" data-action="view" data-id="${report.id}">Ver</button>
-                    ${report.status !== "Aprovado" ? `<button class="btn-approve" type="button" data-action="approve" data-id="${report.id}">Aprovar</button>` : ""}
-                    ${report.status !== "Rejeitado" ? `<button class="btn-reject" type="button" data-action="reject" data-id="${report.id}">Rejeitar</button>` : ""}
-                    <button class="btn-delete" type="button" data-action="delete" data-id="${report.id}">Excluir</button>
+                    <button class="btn-view" type="button" data-action="view" data-id="${report.id}">${escapeHtml(t("action_view"))}</button>
+                    ${report.status !== "Aprovado" ? `<button class="btn-approve" type="button" data-action="approve" data-id="${report.id}">${escapeHtml(t("action_approve"))}</button>` : ""}
+                    ${report.status !== "Rejeitado" ? `<button class="btn-reject" type="button" data-action="reject" data-id="${report.id}">${escapeHtml(t("action_reject"))}</button>` : ""}
+                    <button class="btn-delete" type="button" data-action="delete" data-id="${report.id}">${escapeHtml(t("action_delete"))}</button>
                 </div>
             </td>
         </tr>
@@ -268,7 +274,7 @@ function renderAccountArea() {
     if (!currentUser) {
         accountShell.innerHTML = `
             <div class="account-card">
-                <p class="account-empty">Nenhuma sessão ativa no momento.</p>
+                <p class="account-empty">${escapeHtml(t("account_no_session"))}</p>
             </div>
         `;
         return;
@@ -278,26 +284,26 @@ function renderAccountArea() {
         <div class="account-grid">
             <div class="account-card">
                 <div class="account-meta">
-                    <p class="section-kicker">Perfil</p>
+                    <p class="section-kicker">${escapeHtml(t("profile_kicker"))}</p>
                     <h3>${escapeHtml(currentUser.name)}</h3>
-                    <p>Email: ${escapeHtml(currentUser.email)}</p>
-                    <p>Tipo: ${currentUser.role === "owner" ? "Dono de servidor" : "Jogador"}</p>
-                    <p>${currentUser.serverName ? `Servidor: ${escapeHtml(currentUser.serverName)}` : "Sem servidor vinculado."}</p>
+                    <p>${escapeHtml(t("field_email"))}: ${escapeHtml(currentUser.email)}</p>
+                    <p>${escapeHtml(t("profile_type"))}: ${escapeHtml(currentUser.role === "owner" ? t("role_owner") : t("role_player"))}</p>
+                    <p>${currentUser.serverName ? `${escapeHtml(t("field_server_name"))}: ${escapeHtml(currentUser.serverName)}` : escapeHtml(t("profile_no_server"))}</p>
                     <div class="account-actions">
-                        <button class="btn-secondary" id="refreshMyReportsBtn" type="button">Atualizar Denúncias</button>
-                        <button class="btn-login" id="logoutUserBtn" type="button">Sair da Conta</button>
+                        <button class="btn-secondary" id="refreshMyReportsBtn" type="button">${escapeHtml(t("account_refresh"))}</button>
+                        <button class="btn-login" id="logoutUserBtn" type="button">${escapeHtml(t("account_logout"))}</button>
                     </div>
                 </div>
             </div>
 
             <div class="account-card">
                 <div class="account-reports-head">
-                    <p class="section-kicker">Minhas Denúncias</p>
-                    <h3>Acompanhe o andamento dos seus envios</h3>
-                    <p id="myReportsMeta">Carregando suas denúncias...</p>
+                    <p class="section-kicker">${escapeHtml(t("my_reports_kicker"))}</p>
+                    <h3>${escapeHtml(t("my_reports_title"))}</h3>
+                    <p id="myReportsMeta">${escapeHtml(t("loading_reports"))}</p>
                 </div>
                 <div class="my-reports-list" id="myReportsList">
-                    <p class="account-empty">Carregando...</p>
+                    <p class="account-empty">${escapeHtml(t("loading"))}</p>
                 </div>
             </div>
         </div>
@@ -317,36 +323,36 @@ async function loadMyReports() {
     }
 
     if (!canUseBackend()) {
-        meta.textContent = "Nenhuma denúncia encontrada para esta conta.";
-        list.innerHTML = '<p class="account-empty">Assim que houver denúncias vinculadas a esta conta, elas aparecerão aqui.</p>';
+        meta.textContent = t("my_reports_none_meta");
+        list.innerHTML = `<p class="account-empty">${escapeHtml(t("my_reports_none_text"))}</p>`;
         return;
     }
 
-    meta.textContent = "Atualizando...";
+    meta.textContent = t("updating");
     const response = await safeFetchJson(API.reportsMine, {
         headers: authHeaders()
     });
 
     if (!response?.ok) {
-        meta.textContent = "Não foi possível carregar suas denúncias agora.";
-        list.innerHTML = '<p class="account-empty">Tente novamente em instantes.</p>';
+        meta.textContent = t("my_reports_error_meta");
+        list.innerHTML = `<p class="account-empty">${escapeHtml(t("try_again_later"))}</p>`;
         return;
     }
 
     const myReports = normalizeReports(response.reports);
-    meta.textContent = `${myReports.length} denúncia(s) vinculadas à sua conta.`;
+    meta.textContent = t("my_reports_count").replace("{count}", myReports.length);
 
     if (myReports.length === 0) {
-        list.innerHTML = '<p class="account-empty">Você ainda não enviou denúncias com esta conta.</p>';
+        list.innerHTML = `<p class="account-empty">${escapeHtml(t("my_reports_empty"))}</p>`;
         return;
     }
 
     list.innerHTML = myReports.map((report) => `
         <article class="my-report-card">
             <strong>${escapeHtml(report.playerName)}</strong>
-            <p>Status: <span class="status-badge ${getStatusClass(report.status)}">${escapeHtml(report.status)}</span></p>
-            <p>Servidor: ${escapeHtml(report.server)}</p>
-            <p>Data: ${formatDate(report.createdAt)}</p>
+            <p>${escapeHtml(t("table_status"))}: <span class="status-badge ${getStatusClass(report.status)}">${escapeHtml(getStatusLabel(report.status))}</span></p>
+            <p>${escapeHtml(t("table_server"))}: ${escapeHtml(report.server)}</p>
+            <p>${escapeHtml(t("table_date"))}: ${formatDate(report.createdAt)}</p>
         </article>
     `).join("");
 }
@@ -378,7 +384,7 @@ async function submitReport(event) {
     const submitButton = form.querySelector('button[type="submit"]');
 
     if (!currentUser) {
-        showFeedback(feedback, "Entre na sua conta antes de enviar uma denúncia.", "error");
+        showFeedback(feedback, t("feedback_login_before_report"), "error");
         openModal("accountModal");
         return;
     }
@@ -418,12 +424,12 @@ async function submitReport(event) {
         setButtonLoading(submitButton, false, "Enviar para Análise");
 
         if (!response?.ok) {
-            showFeedback(feedback, response?.error || "Não foi possível salvar a denúncia agora.", "error");
+            showFeedback(feedback, response?.error || t("feedback_save_report_error"), "error");
             return;
         }
 
         form.reset();
-        showFeedback(feedback, enrichment.note || "Denúncia enviada com sucesso. Você poderá acompanhar o status na área Minha Conta.", "success");
+        showFeedback(feedback, enrichment.note || t("feedback_report_success"), "success");
         await loadData();
         await refreshUI();
         window.setTimeout(() => {
@@ -446,31 +452,31 @@ async function submitReport(event) {
     localStorage.setItem(STORAGE_KEYS.localReports, JSON.stringify(reports));
     setButtonLoading(submitButton, false, "Enviar para Análise");
     form.reset();
-    showFeedback(feedback, "Denúncia salva com sucesso.", "success");
+    showFeedback(feedback, t("feedback_report_saved"), "success");
     await refreshUI();
 }
 
 function validateReport(report) {
     if (!report.playerName || !report.discord || !report.server || !report.reason || !report.proofLinks) {
-        return "Preencha todos os campos obrigatórios antes de enviar.";
+        return t("validation_required");
     }
 
     report.proofLinks = normalizeProofLinks(report.proofLinks);
 
     if (report.proofLinks.length === 0) {
-        return "Informe pelo menos um link de prova.";
+        return t("validation_proof_required");
     }
 
     if (report.reason.length < 15) {
-        return "Explique o motivo com um pouco mais de contexto para facilitar a análise.";
+        return t("validation_reason_length");
     }
 
     if (report.uuid !== "N/A" && !isValidUuid(report.uuid)) {
-        return "O UUID informado não está no formato esperado.";
+        return t("validation_uuid");
     }
 
     if (!report.proofLinks.every((link) => isValidProofLink(link))) {
-        return "Todos os links de prova precisam ser válidos do Lightshot, como prnt.sc ou lightshot.com.";
+        return t("validation_proof_links");
     }
 
     return "";
@@ -480,7 +486,7 @@ async function enrichReportWithGotale(report) {
     if (!canUseBackend()) {
         return {
             report,
-            note: "Denúncia enviada com os dados informados."
+            note: t("feedback_report_sent_basic")
         };
     }
 
@@ -495,7 +501,7 @@ async function enrichReportWithGotale(report) {
     if (!response?.ok) {
         return {
             report,
-            note: "Denúncia enviada. O avatar não pôde ser enriquecido agora."
+            note: t("feedback_avatar_failed")
         };
     }
 
@@ -507,7 +513,7 @@ async function enrichReportWithGotale(report) {
             avatarUrl: sanitizeField(response.avatarUrl),
             gotaleLookup: sanitizeField(response.lookup)
         },
-        note: "Denúncia enviada com avatar e perfil resolvidos pela Gotale."
+        note: t("feedback_avatar_success")
     };
 }
 
@@ -516,7 +522,7 @@ async function handleRegister(event) {
     const feedback = document.getElementById("registerFeedback");
 
     if (!canUseBackend()) {
-        showFeedback(feedback, "Não foi possível criar a conta neste momento.", "error");
+        showFeedback(feedback, t("feedback_register_unavailable"), "error");
         return;
     }
 
@@ -536,12 +542,12 @@ async function handleRegister(event) {
     });
 
     if (!response?.ok) {
-        showFeedback(feedback, response?.error || "Não foi possível criar a conta.", "error");
+        showFeedback(feedback, response?.error || t("feedback_register_error"), "error");
         return;
     }
 
     persistUserSession(response.token, response.user);
-    showFeedback(feedback, "Conta criada com sucesso.", "success");
+    showFeedback(feedback, t("feedback_register_success"), "success");
     event.target.reset();
     await refreshUI();
     closeModal("registerModal");
@@ -553,7 +559,7 @@ async function handleUserLogin(event) {
     const feedback = document.getElementById("userLoginFeedback");
 
     if (!canUseBackend()) {
-        showFeedback(feedback, "Não foi possível entrar na conta neste momento.", "error");
+        showFeedback(feedback, t("feedback_login_unavailable"), "error");
         return;
     }
 
@@ -570,12 +576,12 @@ async function handleUserLogin(event) {
     });
 
     if (!response?.ok) {
-        showFeedback(feedback, response?.error || "Não foi possível entrar.", "error");
+        showFeedback(feedback, response?.error || t("feedback_login_error"), "error");
         return;
     }
 
     persistUserSession(response.token, response.user);
-    showFeedback(feedback, "Login realizado com sucesso.", "success");
+    showFeedback(feedback, t("feedback_login_success"), "success");
     event.target.reset();
     await refreshUI();
     closeModal("accountModal");
@@ -602,7 +608,7 @@ async function handleAdminLogin(event) {
     const feedback = document.getElementById("loginFeedback");
 
     if (!username || !password) {
-        showFeedback(feedback, "Informe usuário e senha.", "error");
+        showFeedback(feedback, t("feedback_admin_required"), "error");
         return;
     }
 
@@ -619,12 +625,12 @@ async function handleAdminLogin(event) {
             isAdmin = false;
             adminAuth = null;
             localStorage.removeItem(STORAGE_KEYS.adminAuth);
-            showFeedback(feedback, response?.error || "Credenciais de admin inválidas.", "error");
+            showFeedback(feedback, response?.error || t("feedback_admin_invalid"), "error");
             return;
         }
     }
 
-    showFeedback(feedback, "Login de administrador realizado.", "success");
+    showFeedback(feedback, t("feedback_admin_success"), "success");
     await refreshUI();
     toggleAdminView(true);
     closeModal("loginModal");
@@ -881,24 +887,24 @@ function buildAvatarMarkup(report, variant = "card") {
 function buildProofLinksSummary(links) {
     const normalized = normalizeProofLinks(links);
     if (normalized.length === 0) {
-        return '<span>Sem prova</span>';
+        return `<span>${escapeHtml(t("proof_none"))}</span>`;
     }
 
     if (normalized.length === 1) {
-        return `<a href="${escapeAttribute(normalized[0])}" target="_blank" rel="noreferrer">Ver Prova</a>`;
+        return `<a href="${escapeAttribute(normalized[0])}" target="_blank" rel="noreferrer">${escapeHtml(t("proof_view"))}</a>`;
     }
 
-    return `<a href="${escapeAttribute(normalized[0])}" target="_blank" rel="noreferrer">Ver ${normalized.length} provas</a>`;
+    return `<a href="${escapeAttribute(normalized[0])}" target="_blank" rel="noreferrer">${escapeHtml(t("proof_view_count").replace("{count}", normalized.length))}</a>`;
 }
 
 function buildProofLinksList(links) {
     const normalized = normalizeProofLinks(links);
     if (normalized.length === 0) {
-        return "Sem links de prova.";
+        return t("proof_none");
     }
 
     return normalized
-        .map((link, index) => `<a class="details-proof-link" href="${escapeAttribute(link)}" target="_blank" rel="noreferrer">Abrir prova ${index + 1}</a>`)
+        .map((link, index) => `<a class="details-proof-link" href="${escapeAttribute(link)}" target="_blank" rel="noreferrer">${escapeHtml(t("proof_open_number").replace("{number}", index + 1))}</a>`)
         .join("<br>");
 }
 
@@ -919,7 +925,9 @@ function updateSearchMeta(count) {
     }
 
     const value = searchInput.value.trim();
-    meta.textContent = value ? `${count} resultado(s) para "${value}".` : `${count} denúncia(s) aprovadas visíveis na base pública.`;
+    meta.textContent = value
+        ? t("search_results_for").replace("{count}", count).replace("{query}", value)
+        : t("search_public_count").replace("{count}", count);
 }
 
 function canUseBackend() {
@@ -959,6 +967,16 @@ function getStatusClass(status) {
         return "status-rejeitado";
     }
     return "status-analise";
+}
+
+function getStatusLabel(status) {
+    if (status === "Aprovado") {
+        return t("status_approved");
+    }
+    if (status === "Rejeitado") {
+        return t("status_rejected");
+    }
+    return t("status_pending");
 }
 
 function sortByNewest(a, b) {

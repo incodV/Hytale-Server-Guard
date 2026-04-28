@@ -16,14 +16,22 @@
             <nav>
                 <a href="#top" class="logo">Hytale-Server-<span>Guard</span></a>
                 <ul class="nav-links">
-                    <li><a href="#top" class="active">Início</a></li>
-                    <li><a href="#como-funciona">Como Funciona</a></li>
-                    <li><a href="#denuncias">Denúncias</a></li>
-                    <li><a href="#minha-conta">Minha Conta</a></li>
+                    <li><a href="#top" class="active" data-i18n="nav_home">Início</a></li>
+                    <li><a href="#como-funciona" data-i18n="nav_how">Como Funciona</a></li>
+                    <li><a href="#denuncias" data-i18n="nav_reports">Denúncias</a></li>
+                    <li><a href="#minha-conta" data-i18n="nav_account">Minha Conta</a></li>
                     <li id="adminNavLink" class="admin-nav-link" hidden><a href="#admin-panel">Painel Admin</a></li>
                 </ul>
                 <div class="nav-actions">
-                    <button class="btn-secondary" id="accountBtn" type="button">Entrar / Criar Conta</button>
+                    <div class="language-switcher">
+                        <label class="sr-only" for="languageSelect">Idioma</label>
+                        <select id="languageSelect" aria-label="Idioma">
+                            <option value="pt-BR">PT</option>
+                            <option value="en">EN</option>
+                            <option value="es">ES</option>
+                        </select>
+                    </div>
+                    <button class="btn-secondary" id="accountBtn" type="button" data-i18n="account_login_create">Entrar / Criar Conta</button>
                 </div>
             </nav>
         </div>
@@ -37,45 +45,45 @@
 
             <div class="container hero-inner">
                 <div class="hero-copy">
-                    <p class="eyebrow">Rede pública de proteção para servidores Hytale</p>
-                    <h1>Proteja seu servidor.</h1>
-                    <p class="hero-text">
+                    <p class="eyebrow" data-i18n="hero_eyebrow">Rede pública de proteção para servidores Hytale</p>
+                    <h1 data-i18n="hero_title">Proteja seu servidor.</h1>
+                    <p class="hero-text" data-i18n="hero_text">
                         Consulte jogadores, acompanhe casos aprovados e use um protocolo simples para decidir quem entra na sua comunidade.
                     </p>
 
                     <div class="search-container hero-search">
-                        <label class="sr-only" for="searchInput">Pesquisar denúncia</label>
-                        <input type="text" id="searchInput" placeholder="Pesquisar por nome do jogador, UUID ou servidor">
+                        <label class="sr-only" for="searchInput" data-i18n="search_label">Pesquisar denúncia</label>
+                        <input type="text" id="searchInput" data-i18n-placeholder="search_placeholder" placeholder="Pesquisar por nome do jogador, UUID ou servidor">
                         <p id="searchMeta" class="search-meta">Carregando denúncias...</p>
                     </div>
 
                     <div class="hero-actions">
-                        <a href="#denuncias" class="btn-primary">Ver Casos Recentes</a>
-                        <a href="#como-funciona" class="btn-secondary">Como se Proteger</a>
+                        <a href="#denuncias" class="btn-primary" data-i18n="hero_cta_reports">Ver Casos Recentes</a>
+                        <a href="#como-funciona" class="btn-secondary" data-i18n="hero_cta_protect">Como se Proteger</a>
                     </div>
 
                     <dl class="hero-metrics" aria-label="Resumo da plataforma">
                         <div>
-                            <dt>Casos aprovados</dt>
+                            <dt data-i18n="metric_approved">Casos aprovados</dt>
                             <dd id="heroApprovedCount">0</dd>
                         </div>
                         <div>
-                            <dt>Em análise</dt>
+                            <dt data-i18n="metric_pending">Em análise</dt>
                             <dd id="heroPendingCount">0</dd>
                         </div>
                         <div>
-                            <dt>Contas ativas</dt>
+                            <dt data-i18n="metric_accounts">Contas ativas</dt>
                             <dd id="heroMemberCount">0</dd>
                         </div>
                     </dl>
                 </div>
 
                 <div class="hero-aside" aria-label="Diretrizes rápidas">
-                    <p class="hero-aside-label">Checklist rápido</p>
+                    <p class="hero-aside-label" data-i18n="checklist_title">Checklist rápido</p>
                     <ul class="hero-points">
-                        <li>Pesquise o nome do jogador infrator antes de aprovar acesso.</li>
-                        <li>Confira UUID, servidor e prova antes de agir.</li>
-                        <li>Crie conta para acompanhar suas próprias denúncias.</li>
+                        <li data-i18n="checklist_1">Pesquise o nome do jogador infrator antes de aprovar acesso.</li>
+                        <li data-i18n="checklist_2">Confira UUID, servidor e prova antes de agir.</li>
+                        <li data-i18n="checklist_3">Crie conta para acompanhar suas próprias denúncias.</li>
                     </ul>
                 </div>
             </div>
@@ -84,31 +92,31 @@
         <section id="como-funciona" class="process-section">
             <div class="container">
                 <div class="section-heading">
-                    <p class="section-kicker">Como se Proteger</p>
-                    <h2>Use a base como um protocolo de entrada e moderação.</h2>
-                    <p>O foco do site é prevenção: consultar primeiro, validar evidências depois e só então registrar um caso novo.</p>
+                    <p class="section-kicker" data-i18n="protect_kicker">Como se Proteger</p>
+                    <h2 data-i18n="protect_title">Use a base como um protocolo de entrada e moderação.</h2>
+                    <p data-i18n="protect_text">O foco do site é prevenção: consultar primeiro, validar evidências depois e só então registrar um caso novo.</p>
                 </div>
 
                 <div class="process-grid">
                     <article>
                         <span>01</span>
-                        <h3>Consulte antes de aceitar</h3>
-                        <p>Pesquise nome, UUID ou servidor citado para verificar se já existe histórico aprovado.</p>
+                        <h3 data-i18n="step1_title">Consulte antes de aceitar</h3>
+                        <p data-i18n="step1_text">Pesquise nome, UUID ou servidor citado para verificar se já existe histórico aprovado.</p>
                     </article>
                     <article>
                         <span>02</span>
-                        <h3>Confirme as evidências</h3>
-                        <p>Leia o motivo, abra a prova e compare com o contexto do seu servidor antes de agir.</p>
+                        <h3 data-i18n="step2_title">Confirme as evidências</h3>
+                        <p data-i18n="step2_text">Leia o motivo, abra a prova e compare com o contexto do seu servidor antes de agir.</p>
                     </article>
                     <article>
                         <span>03</span>
-                        <h3>Crie conta e acompanhe</h3>
-                        <p>Jogadores e donos de servidor podem entrar, registrar denúncias e acompanhar o andamento de cada envio.</p>
+                        <h3 data-i18n="step3_title">Crie conta e acompanhe</h3>
+                        <p data-i18n="step3_text">Jogadores e donos de servidor podem entrar, registrar denúncias e acompanhar o andamento de cada envio.</p>
                     </article>
                     <article>
                         <span>04</span>
-                        <h3>Moderação publica só o que foi revisado</h3>
-                        <p>O painel do wonerGard aprova, rejeita ou remove registros antes de exibir algo ao público.</p>
+                        <h3 data-i18n="step4_title">Moderação publica só o que foi revisado</h3>
+                        <p data-i18n="step4_text">O painel do wonerGard aprova, rejeita ou remove registros antes de exibir algo ao público.</p>
                     </article>
                 </div>
             </div>
@@ -119,11 +127,11 @@
                 <div id="publicView">
                     <div class="section-heading section-heading-inline">
                         <div>
-                            <p class="section-kicker">Base pública</p>
-                            <h2>Casos Recentes</h2>
-                            <p>Somente denúncias aprovadas aparecem para visitantes.</p>
+                            <p class="section-kicker" data-i18n="public_kicker">Base pública</p>
+                            <h2 data-i18n="public_title">Casos Recentes</h2>
+                            <p data-i18n="public_text">Somente denúncias aprovadas aparecem para visitantes.</p>
                         </div>
-                        <button class="btn-primary" id="btnOpenReport" type="button">Enviar Denúncia</button>
+                        <button class="btn-primary" id="btnOpenReport" type="button" data-i18n="report_send">Enviar Denúncia</button>
                     </div>
 
                     <div class="reports-grid" id="reportsGrid">
@@ -134,24 +142,24 @@
                 <div id="adminPanel" class="admin-panel" hidden>
                     <div class="section-heading section-heading-inline">
                         <div>
-                            <p class="section-kicker">Moderação</p>
-                            <h2>Painel de Administração</h2>
-                            <p>Visão completa da fila de análise e das decisões já publicadas.</p>
+                            <p class="section-kicker" data-i18n="admin_kicker">Moderação</p>
+                            <h2 data-i18n="admin_title">Painel de Administração</h2>
+                            <p data-i18n="admin_text">Visão completa da fila de análise e das decisões já publicadas.</p>
                         </div>
-                        <button class="btn-secondary" id="btnBackToSite" type="button">Voltar ao Site</button>
+                        <button class="btn-secondary" id="btnBackToSite" type="button" data-i18n="admin_back">Voltar ao Site</button>
                     </div>
 
                     <div class="admin-stats">
                         <div class="stat-card">
-                            <span class="stat-label">Pendentes</span>
+                            <span class="stat-label" data-i18n="admin_pending">Pendentes</span>
                             <span class="stat-value" id="statPending">0</span>
                         </div>
                         <div class="stat-card">
-                            <span class="stat-label">Aprovados</span>
+                            <span class="stat-label" data-i18n="admin_approved">Aprovados</span>
                             <span class="stat-value" id="statApproved">0</span>
                         </div>
                         <div class="stat-card">
-                            <span class="stat-label">Total</span>
+                            <span class="stat-label" data-i18n="admin_total">Total</span>
                             <span class="stat-value" id="statTotal">0</span>
                         </div>
                     </div>
@@ -160,11 +168,11 @@
                         <table class="admin-table">
                             <thead>
                                 <tr>
-                                    <th>Jogador</th>
-                                    <th>Servidor</th>
-                                    <th>Status</th>
-                                    <th>Data</th>
-                                    <th>Ações</th>
+                                    <th data-i18n="table_player">Jogador</th>
+                                    <th data-i18n="table_server">Servidor</th>
+                                    <th data-i18n="table_status">Status</th>
+                                    <th data-i18n="table_date">Data</th>
+                                    <th data-i18n="table_actions">Ações</th>
                                 </tr>
                             </thead>
                             <tbody id="adminTableBody"></tbody>
@@ -178,11 +186,11 @@
             <div class="container">
                 <div class="section-heading section-heading-inline">
                     <div>
-                        <p class="section-kicker">Minha Conta</p>
-                        <h2>Acompanhe suas denúncias e seu perfil.</h2>
+                        <p class="section-kicker" data-i18n="account_kicker">Minha Conta</p>
+                        <h2 data-i18n="account_title">Acompanhe suas denúncias e seu perfil.</h2>
                         <p id="accountIntro">Crie uma conta como jogador ou dono de servidor para acompanhar o status dos seus envios.</p>
                     </div>
-                    <button class="btn-primary" id="accountActionBtn" type="button">Criar Conta</button>
+                    <button class="btn-primary" id="accountActionBtn" type="button" data-i18n="account_create">Criar Conta</button>
                 </div>
 
                 <div class="account-shell" id="accountShell">
@@ -197,15 +205,15 @@
     <div class="modal" id="reportModal" aria-hidden="true">
         <div class="modal-content">
             <button class="modal-close" data-close-modal type="button" aria-label="Fechar">&times;</button>
-            <p class="section-kicker">Nova denúncia</p>
-            <h2>Envie um caso para análise</h2>
-            <p class="modal-intro">Os relatos só entram na base pública depois da revisão do administrador.</p>
+            <p class="section-kicker" data-i18n="report_modal_kicker">Nova denúncia</p>
+            <h2 data-i18n="report_modal_title">Envie um caso para análise</h2>
+            <p class="modal-intro" data-i18n="report_modal_text">Os relatos só entram na base pública depois da revisão do administrador.</p>
 
             <form id="reportForm">
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="playerName">Nome do Jogador</label>
-                        <input id="playerName" type="text" name="playerName" required placeholder="Ex: Griefer123">
+                        <label for="playerName" data-i18n="field_player">Nome do Jogador</label>
+                        <input id="playerName" type="text" name="playerName" required data-i18n-placeholder="field_player_placeholder" placeholder="Ex: Griefer123">
                     </div>
                     <div class="form-group">
                         <label for="uuid">UUID</label>
@@ -215,34 +223,34 @@
 
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="discord">Seu Discord</label>
-                        <input id="discord" type="text" name="discord" required placeholder="usuario#0000">
+                        <label for="discord" data-i18n="field_discord">Seu Discord</label>
+                        <input id="discord" type="text" name="discord" required data-i18n-placeholder="field_discord_placeholder" placeholder="usuario#0000">
                     </div>
                     <div class="form-group">
-                        <label for="server">Servidor Onde Ocorreu</label>
-                        <input id="server" type="text" name="server" required placeholder="Nome do servidor">
+                        <label for="server" data-i18n="field_server">Servidor Onde Ocorreu</label>
+                        <input id="server" type="text" name="server" required data-i18n-placeholder="field_server_placeholder" placeholder="Nome do servidor">
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label for="reason">Motivo da Denúncia</label>
-                    <textarea id="reason" name="reason" rows="5" required placeholder="Descreva o ocorrido com contexto suficiente para análise."></textarea>
+                    <label for="reason" data-i18n="field_reason">Motivo da Denúncia</label>
+                    <textarea id="reason" name="reason" rows="5" required data-i18n-placeholder="field_reason_placeholder" placeholder="Descreva o ocorrido com contexto suficiente para análise."></textarea>
                 </div>
 
                 <div class="form-group">
-                    <label for="proofLinks">Links das Provas</label>
-                    <textarea id="proofLinks" name="proofLinks" rows="4" required placeholder="https://prnt.sc/xxxxxx&#10;https://prnt.sc/yyyyyy"></textarea>
+                    <label for="proofLinks" data-i18n="field_proofs">Links das Provas</label>
+                    <textarea id="proofLinks" name="proofLinks" rows="4" required data-i18n-placeholder="field_proofs_placeholder" placeholder="https://prnt.sc/xxxxxx&#10;https://prnt.sc/yyyyyy"></textarea>
                     <small>
-                        Cole um link por linha. Apenas links do Lightshot. Se precisar, <a href="https://app.prntscr.com/build/setup-lightshot.exe" target="_blank" rel="noreferrer">baixe aqui</a>.
+                        <span data-i18n="field_proofs_help">Cole um link por linha. Apenas links do Lightshot. Se precisar,</span> <a href="https://app.prntscr.com/build/setup-lightshot.exe" target="_blank" rel="noreferrer" data-i18n="field_proofs_download">baixe aqui</a>.
                     </small>
                 </div>
 
-                <p class="form-note">
+                <p class="form-note" data-i18n="field_note">
                     Entre na sua conta antes de denunciar. O sistema também tenta buscar o avatar do denunciado automaticamente.
                 </p>
 
                 <p class="form-feedback" id="reportFeedback" hidden></p>
-                <button type="submit" class="btn-primary form-submit">Enviar para Análise</button>
+                <button type="submit" class="btn-primary form-submit" data-i18n="report_submit">Enviar para Análise</button>
             </form>
         </div>
     </div>
@@ -250,22 +258,22 @@
     <div class="modal" id="loginModal" aria-hidden="true">
         <div class="modal-content modal-content-sm">
             <button class="modal-close" data-close-modal type="button" aria-label="Fechar">&times;</button>
-            <p class="section-kicker">Área restrita</p>
-            <h2>Login do administrador</h2>
-            <p class="modal-intro">Acesso exclusivo para o usuário wonerGard.</p>
+            <p class="section-kicker" data-i18n="admin_modal_kicker">Área restrita</p>
+            <h2 data-i18n="admin_modal_title">Login do administrador</h2>
+            <p class="modal-intro" data-i18n="admin_modal_text">Acesso exclusivo para o usuário wonerGard.</p>
 
             <form id="loginForm">
                 <div class="form-group">
-                    <label for="adminUser">Usuário</label>
-                    <input id="adminUser" type="text" name="username" required placeholder="wonerGard">
+                    <label for="adminUser" data-i18n="field_username">Usuário</label>
+                    <input id="adminUser" type="text" name="username" required data-i18n-placeholder="field_username_placeholder" placeholder="wonerGard">
                 </div>
                 <div class="form-group">
-                    <label for="adminPass">Senha</label>
-                    <input id="adminPass" type="password" name="password" required placeholder="Sua senha">
+                    <label for="adminPass" data-i18n="field_password">Senha</label>
+                    <input id="adminPass" type="password" name="password" required data-i18n-placeholder="field_password_placeholder" placeholder="Sua senha">
                 </div>
 
                 <p class="form-feedback" id="loginFeedback" hidden></p>
-                <button type="submit" class="btn-primary form-submit">Entrar</button>
+                <button type="submit" class="btn-primary form-submit" data-i18n="login_enter">Entrar</button>
             </form>
         </div>
     </div>
@@ -273,28 +281,28 @@
     <div class="modal" id="accountModal" aria-hidden="true">
         <div class="modal-content modal-content-sm">
             <button class="modal-close" data-close-modal type="button" aria-label="Fechar">&times;</button>
-            <p class="section-kicker">Conta</p>
-            <h2>Entrar na sua conta</h2>
-            <p class="modal-intro">Use sua conta para acompanhar denúncias enviadas e manter seu histórico organizado.</p>
+            <p class="section-kicker" data-i18n="user_modal_kicker">Conta</p>
+            <h2 data-i18n="user_modal_title">Entrar na sua conta</h2>
+            <p class="modal-intro" data-i18n="user_modal_text">Use sua conta para acompanhar denúncias enviadas e manter seu histórico organizado.</p>
 
             <form id="userLoginForm">
                 <div class="form-group">
-                    <label for="userLoginEmail">Email</label>
-                    <input id="userLoginEmail" type="email" name="email" required placeholder="voce@email.com">
+                    <label for="userLoginEmail" data-i18n="field_email">Email</label>
+                    <input id="userLoginEmail" type="email" name="email" required data-i18n-placeholder="field_email_placeholder" placeholder="voce@email.com">
                 </div>
                 <div class="form-group">
-                    <label for="userLoginPassword">Senha</label>
-                    <input id="userLoginPassword" type="password" name="password" required placeholder="Sua senha">
+                    <label for="userLoginPassword" data-i18n="field_password">Senha</label>
+                    <input id="userLoginPassword" type="password" name="password" required data-i18n-placeholder="field_password_placeholder" placeholder="Sua senha">
                 </div>
 
                 <p class="form-feedback" id="userLoginFeedback" hidden></p>
-                <button type="submit" class="btn-primary form-submit">Entrar na Conta</button>
+                <button type="submit" class="btn-primary form-submit" data-i18n="user_login_button">Entrar na Conta</button>
             </form>
 
             <div class="auth-switch">
-                <p>Não tem conta ainda?</p>
-                <button type="button" class="btn-secondary auth-switch-btn" id="openRegisterModalBtn">Criar Conta</button>
-                <button type="button" class="auth-admin-link" id="openAdminLoginBtn">Acesso administrativo</button>
+                <p data-i18n="auth_no_account">Não tem conta ainda?</p>
+                <button type="button" class="btn-secondary auth-switch-btn" id="openRegisterModalBtn" data-i18n="account_create">Criar Conta</button>
+                <button type="button" class="auth-admin-link" id="openAdminLoginBtn" data-i18n="auth_admin_access">Acesso administrativo</button>
             </div>
         </div>
     </div>
@@ -302,45 +310,45 @@
     <div class="modal" id="registerModal" aria-hidden="true">
         <div class="modal-content">
             <button class="modal-close" data-close-modal type="button" aria-label="Fechar">&times;</button>
-            <p class="section-kicker">Cadastro</p>
-            <h2>Crie seu acesso</h2>
-            <p class="modal-intro">Jogadores e donos de servidor podem criar conta para acompanhar suas denúncias.</p>
+            <p class="section-kicker" data-i18n="register_modal_kicker">Cadastro</p>
+            <h2 data-i18n="register_modal_title">Crie seu acesso</h2>
+            <p class="modal-intro" data-i18n="register_modal_text">Jogadores e donos de servidor podem criar conta para acompanhar suas denúncias.</p>
 
             <form id="registerForm">
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="registerName">Nome</label>
-                        <input id="registerName" type="text" name="name" required placeholder="Seu nome">
+                        <label for="registerName" data-i18n="field_name">Nome</label>
+                        <input id="registerName" type="text" name="name" required data-i18n-placeholder="field_name_placeholder" placeholder="Seu nome">
                     </div>
                     <div class="form-group">
-                        <label for="registerEmail">Email</label>
-                        <input id="registerEmail" type="email" name="email" required placeholder="voce@email.com">
+                        <label for="registerEmail" data-i18n="field_email">Email</label>
+                        <input id="registerEmail" type="email" name="email" required data-i18n-placeholder="field_email_placeholder" placeholder="voce@email.com">
                     </div>
                 </div>
 
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="registerPassword">Senha</label>
-                        <input id="registerPassword" type="password" name="password" required placeholder="Mínimo de 6 caracteres">
+                        <label for="registerPassword" data-i18n="field_password">Senha</label>
+                        <input id="registerPassword" type="password" name="password" required data-i18n-placeholder="field_register_password_placeholder" placeholder="Mínimo de 6 caracteres">
                     </div>
                     <div class="form-group">
-                        <label for="registerRole">Tipo de conta</label>
+                        <label for="registerRole" data-i18n="field_account_type">Tipo de conta</label>
                         <div class="select-wrap">
                             <select id="registerRole" name="role">
-                                <option value="player">Jogador</option>
-                                <option value="owner">Dono de servidor</option>
+                                <option value="player" data-i18n="role_player">Jogador</option>
+                                <option value="owner" data-i18n="role_owner">Dono de servidor</option>
                             </select>
                         </div>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label for="registerServerName">Servidor</label>
-                    <input id="registerServerName" type="text" name="serverName" placeholder="Obrigatório para donos de servidor">
+                    <label for="registerServerName" data-i18n="field_server_name">Servidor</label>
+                    <input id="registerServerName" type="text" name="serverName" data-i18n-placeholder="field_server_name_placeholder" placeholder="Obrigatório para donos de servidor">
                 </div>
 
                 <p class="form-feedback" id="registerFeedback" hidden></p>
-                <button type="submit" class="btn-primary form-submit">Criar Conta</button>
+                <button type="submit" class="btn-primary form-submit" data-i18n="account_create">Criar Conta</button>
             </form>
         </div>
     </div>
@@ -356,7 +364,7 @@
         <div class="container footer-layout">
             <div>
                 <a href="#top" class="footer-logo">Hytale-Server-<span>Guard</span></a>
-                <p>Não somos parte do Hytale nem da Hypixel. Nosso foco é ajudar comunidades a proteger seus servidores.</p>
+                <p data-i18n="footer_disclaimer">Não somos parte do Hytale nem da Hypixel. Nosso foco é ajudar comunidades a proteger seus servidores.</p>
             </div>
             <div class="footer-meta">
                 <p>&copy; <span id="currentYear"></span> Hytale-Server-Guard Community.</p>
@@ -364,6 +372,7 @@
         </div>
     </footer>
 
+    <script src="translations.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
