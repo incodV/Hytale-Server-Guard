@@ -776,6 +776,10 @@ function setupEventListeners() {
         closeModal("accountModal");
         openModal("registerModal");
     });
+    bindIfExists("openAdminLoginBtn", "click", () => {
+        closeModal("accountModal");
+        openModal("loginModal");
+    });
     bindIfExists("btnBackToSite", "click", () => {
         isViewingAdmin = false;
         toggleAdminView(false);

@@ -817,6 +817,20 @@ section {
     width: 100%;
 }
 
+.auth-admin-link {
+    margin-top: 12px;
+    background: transparent;
+    border: 0;
+    color: var(--text-muted);
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.auth-admin-link:hover {
+    color: var(--text-main);
+}
+
 .account-shell {
     margin-top: 24px;
 }
