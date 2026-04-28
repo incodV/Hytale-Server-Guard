@@ -103,6 +103,11 @@ nav {
     display: flex;
     align-items: center;
     gap: 12px;
+    flex-shrink: 0;
+}
+
+.nav-actions > * {
+    flex-shrink: 0;
 }
 
 .language-switcher {
@@ -171,6 +176,7 @@ nav {
 .btn-login,
 .btn-primary,
 .btn-secondary,
+.btn-discord,
 .admin-table-actions button {
     border: 0;
     border-radius: 999px;
@@ -179,11 +185,31 @@ nav {
 }
 
 .btn-login,
-.btn-secondary {
+.btn-secondary,
+.btn-discord {
     padding: 0.9rem 1.25rem;
     color: var(--text-main);
     border: 1px solid var(--border);
     background: rgba(255, 255, 255, 0.03);
+}
+
+.btn-discord {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-decoration: none;
+    background: linear-gradient(135deg, rgba(88, 101, 242, 0.24), rgba(88, 101, 242, 0.12));
+    border-color: rgba(125, 137, 255, 0.35);
+}
+
+.btn-discord::before {
+    content: "";
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: #7d89ff;
+    box-shadow: 0 0 0 6px rgba(125, 137, 255, 0.14);
 }
 
 .btn-primary {
@@ -199,12 +225,14 @@ nav {
 
 .btn-primary:hover,
 .btn-secondary:hover,
+.btn-discord:hover,
 .btn-login:hover,
 .admin-table-actions button:hover {
     transform: translateY(-1px);
 }
 
 .btn-secondary:hover,
+.btn-discord:hover,
 .btn-login:hover {
     border-color: rgba(240, 226, 193, 0.24);
     background: rgba(255, 255, 255, 0.06);
@@ -1071,6 +1099,11 @@ footer {
         width: 100%;
         justify-content: flex-end;
         flex-wrap: wrap;
+    }
+
+    .btn-discord,
+    #accountBtn {
+        min-height: 48px;
     }
 
     section {
