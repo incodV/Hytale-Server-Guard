@@ -2,10 +2,12 @@ import {
     createId,
     getUserFromToken,
     jsonResponse,
+    listReports,
     readJsonBody,
     sanitize,
     saveReport
 } from "./_shared/backend.mjs";
+import { notifyRiskAlert } from "./_shared/discord.mjs";
 
 export default async (request) => {
     if (request.method !== "POST") {
@@ -55,6 +57,12 @@ export default async (request) => {
     };
 
     await saveReport(report);
+    const reports = await listReports();
+    await notifyRiskAlert({
+        request,
+        report,
+        reports
+    });
 
     return jsonResponse({
         ok: true,
