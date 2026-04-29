@@ -1,8 +1,8 @@
 import {
     getReport,
-    isAdminAuthorized,
     jsonResponse,
     readJsonBody,
+    requireAdminSession,
     sanitize,
     saveReport
 } from "./_shared/backend.mjs";
@@ -13,8 +13,8 @@ export default async (request) => {
         return jsonResponse({ error: "Method Not Allowed" }, 405);
     }
 
-    if (!isAdminAuthorized(request)) {
-        return jsonResponse({ error: "Não autorizado." }, 401);
+    if (!(await requireAdminSession(request))) {
+        return jsonResponse({ error: "Nao autorizado." }, 401);
     }
 
     const body = await readJsonBody(request);
@@ -27,7 +27,7 @@ export default async (request) => {
 
     const report = await getReport(id);
     if (!report) {
-        return jsonResponse({ error: "Denúncia não encontrada." }, 404);
+        return jsonResponse({ error: "Denuncia nao encontrada." }, 404);
     }
 
     const previousStatus = report.status;
@@ -35,20 +35,30 @@ export default async (request) => {
     report.updatedAt = new Date().toISOString();
     await saveReport(report);
 
+    let statusWebhook = null;
+    let approvedWebhook = null;
+
     if (previousStatus !== status) {
-        await notifyCaseStatusChange({
+        statusWebhook = await notifyCaseStatusChange({
             request,
             report,
             previousStatus
         });
 
         if (status === "Aprovado") {
-            await notifyApprovedCase({
+            approvedWebhook = await notifyApprovedCase({
                 request,
                 report
             });
         }
     }
 
-    return jsonResponse({ ok: true, report });
+    return jsonResponse({
+        ok: true,
+        report,
+        webhook: {
+            status: statusWebhook,
+            approved: approvedWebhook
+        }
+    });
 };

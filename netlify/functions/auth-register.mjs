@@ -27,6 +27,7 @@ export default async (request) => {
     const password = sanitize(body.password);
     const role = normalizeRole(body.role);
     const serverName = sanitize(body.serverName);
+    const hytaleNickname = sanitize(body.hytaleNickname);
 
     if (!name || !email || !password) {
         return jsonResponse({ error: "Nome, email e senha são obrigatórios." }, 400);
@@ -53,9 +54,11 @@ export default async (request) => {
         email,
         role,
         serverName,
+        hytaleNickname,
         passwordSalt: salt,
         passwordHash: hash,
         sessionToken,
+        sessionUpdatedAt: new Date().toISOString(),
         createdAt: new Date().toISOString()
     };
 

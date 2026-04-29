@@ -33,6 +33,7 @@ export default async (request) => {
     }
 
     user.sessionToken = createToken();
+    user.sessionUpdatedAt = new Date().toISOString();
     await saveUser(user);
 
     return jsonResponse({

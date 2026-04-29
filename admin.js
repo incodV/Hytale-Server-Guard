@@ -2,9 +2,12 @@ let adminReports = [];
 let adminUsers = [];
 let adminPartners = [];
 let dashboardData = null;
-let adminAuth = null;
+let adminSession = null;
 
 const ADMIN_API = {
+    login: "/api/auth/admin/login",
+    logout: "/api/auth/admin/logout",
+    session: "/api/auth/admin/session",
     reports: "/api/reports/admin",
     update: "/api/reports/admin/update",
     delete: "/api/reports/admin/delete",
@@ -19,10 +22,11 @@ document.addEventListener("DOMContentLoaded", () => {
     resetAdminShell();
     setupAdminEventListeners();
     trackVisit("admin");
+    bootstrapAdminSession();
 });
 
 window.addEventListener("pageshow", () => {
-    if (!adminAuth) {
+    if (!adminSession) {
         resetAdminShell();
     }
 });
@@ -91,10 +95,7 @@ function setupAdminEventListeners() {
 
             const response = await safeFetchJson(ADMIN_API.partners, {
                 method: "DELETE",
-                headers: {
-                    ...jsonHeaders(),
-                    ...adminHeaders()
-                },
+                headers: jsonHeaders(),
                 body: JSON.stringify({ id })
             });
 
@@ -129,6 +130,18 @@ function setupAdminEventListeners() {
     window.addEventListener("scroll", syncSidebarWithScroll, { passive: true });
 }
 
+async function bootstrapAdminSession() {
+    const response = await safeFetchJson(ADMIN_API.session);
+    if (!response?.ok || !response.authenticated) {
+        adminSession = null;
+        resetAdminShell();
+        return;
+    }
+
+    adminSession = response.session || null;
+    await showDashboard();
+}
+
 async function handleAdminLogin(event) {
     event.preventDefault();
 
@@ -138,37 +151,25 @@ async function handleAdminLogin(event) {
     const password = String(formData.get("password") || "").trim();
 
     if (!username || !password) {
-        showFeedback(feedback, "Informe usuário e senha.", "error");
+        showFeedback(feedback, "Informe usuario e senha.", "error");
         return;
     }
 
-    adminAuth = { username, password };
-    const valid = await validateAdminSession();
-    if (!valid) {
-        adminAuth = null;
-        showFeedback(feedback, "Credenciais de administrador inválidas.", "error");
-        return;
-    }
-
-    showFeedback(feedback, "Acesso administrativo liberado.", "success");
-    await showDashboard();
-}
-
-async function validateAdminSession() {
-    if (!adminAuth) {
-        return false;
-    }
-
-    const response = await safeFetchJson(ADMIN_API.reports, {
-        headers: adminHeaders()
+    const response = await safeFetchJson(ADMIN_API.login, {
+        method: "POST",
+        headers: jsonHeaders(),
+        body: JSON.stringify({ username, password })
     });
 
     if (!response?.ok) {
-        return false;
+        adminSession = null;
+        showFeedback(feedback, response?.error || "Credenciais de administrador invalidas.", "error");
+        return;
     }
 
-    adminReports = Array.isArray(response.reports) ? response.reports : [];
-    return true;
+    adminSession = response.session || { username };
+    showFeedback(feedback, "Acesso administrativo liberado.", "success");
+    await showDashboard();
 }
 
 async function showDashboard() {
@@ -186,27 +187,21 @@ async function showDashboard() {
     await refreshDashboardData();
 }
 
-function logoutAdmin() {
-    adminAuth = null;
+async function logoutAdmin() {
+    if (adminSession) {
+        await safeFetchJson(ADMIN_API.logout, { method: "POST" });
+    }
+
+    adminSession = null;
     adminReports = [];
     adminUsers = [];
     adminPartners = [];
     dashboardData = null;
     clearLegacyAdminSession();
+    resetAdminShell();
 
-    const dashboard = document.getElementById("adminDashboard");
-    const loginShell = document.getElementById("adminLoginShell");
     const form = document.getElementById("adminStandaloneLoginForm");
     const feedback = document.getElementById("adminStandaloneFeedback");
-
-    if (dashboard) {
-        dashboard.hidden = true;
-    }
-
-    if (loginShell) {
-        loginShell.hidden = false;
-    }
-
     if (form) {
         form.reset();
     }
@@ -219,16 +214,21 @@ function logoutAdmin() {
 }
 
 async function refreshDashboardData() {
+    if (!adminSession) {
+        resetAdminShell();
+        return;
+    }
+
     setRefreshLabel("Atualizando dados...");
 
     const [dashboardResponse, usersResponse, reportsResponse] = await Promise.all([
-        safeFetchJson(ADMIN_API.dashboard, { headers: adminHeaders() }),
-        safeFetchJson(ADMIN_API.users, { headers: adminHeaders() }),
-        safeFetchJson(ADMIN_API.reports, { headers: adminHeaders() })
+        safeFetchJson(ADMIN_API.dashboard),
+        safeFetchJson(ADMIN_API.users),
+        safeFetchJson(ADMIN_API.reports)
     ]);
 
     if (!dashboardResponse?.ok || !usersResponse?.ok || !reportsResponse?.ok) {
-        logoutAdmin();
+        await logoutAdmin();
         return;
     }
 
@@ -238,7 +238,7 @@ async function refreshDashboardData() {
     adminPartners = Array.isArray(dashboardResponse.partners) ? dashboardResponse.partners : [];
 
     renderDashboard();
-    setRefreshLabel(`Atualizado às ${formatTime(new Date())}`);
+    setRefreshLabel(`Atualizado as ${formatTime(new Date())}`);
 }
 
 function renderDashboard() {
@@ -256,14 +256,14 @@ function renderDashboard() {
 function renderKpis() {
     const stats = dashboardData?.stats || {};
     setText("kpiVisitsTotal", stats.visitsTotal || 0);
-    setText("kpiVisitsSplit", `${stats.publicVisits || 0} públicas / ${stats.adminVisits || 0} admin`);
+    setText("kpiVisitsSplit", `${stats.publicVisits || 0} publicas / ${stats.adminVisits || 0} admin`);
     setText("kpiPending", stats.reportsPending || 0);
-    setText("kpiReportsTotal", `${stats.reportsTotal || 0} denúncias no total`);
+    setText("kpiReportsTotal", `${stats.reportsTotal || 0} denuncias no total`);
     setText("kpiUsersTotal", stats.usersTotal || 0);
     setText("kpiUsersSplit", `${stats.ownersTotal || 0} donos / ${stats.playersTotal || 0} jogadores`);
     setText("kpiPartnersTotal", stats.partnersTotal || 0);
-    setText("adminSessionMeta", `Sessão ativa: ${adminAuth?.username || "admin"}`);
-    setText("adminWelcomeCopy", `${stats.reportsPending || 0} casos aguardando decisão agora.`);
+    setText("adminSessionMeta", `Sessao ativa: ${adminSession?.username || "admin"}`);
+    setText("adminWelcomeCopy", `${stats.reportsPending || 0} casos aguardando decisao agora.`);
 }
 
 function renderModerationTable() {
@@ -274,7 +274,7 @@ function renderModerationTable() {
 
     const sorted = [...adminReports].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     if (sorted.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="6">Nenhuma denúncia cadastrada.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="6">Nenhuma denuncia cadastrada.</td></tr>';
         return;
     }
 
@@ -285,20 +285,20 @@ function renderModerationTable() {
                     ${buildAvatarMarkup(report)}
                     <div>
                         <strong>${escapeHtml(report.playerName)}</strong><br>
-                        <small>${escapeHtml(report.uuid || "UUID não informado")}</small>
+                        <small>${escapeHtml(report.uuid || "UUID nao informado")}</small>
                     </div>
                 </div>
             </td>
             <td>${escapeHtml(report.server)}</td>
             <td><span class="status-badge ${getStatusClass(report.status)}">${escapeHtml(report.status)}</span></td>
-            <td>${escapeHtml(report.reporterName || report.discord || "Conta não identificada")}</td>
+            <td>${escapeHtml(report.reporterName || report.discord || "Conta nao identificada")}</td>
             <td>${formatDate(report.createdAt)}</td>
             <td>
                 <div class="admin-table-actions">
-                    <button class="btn-view" type="button" data-action="view" data-id="${report.id}">Ver</button>
-                    ${report.status !== "Aprovado" ? `<button class="btn-approve" type="button" data-action="approve" data-id="${report.id}">Aprovar</button>` : ""}
-                    ${report.status !== "Rejeitado" ? `<button class="btn-reject" type="button" data-action="reject" data-id="${report.id}">Rejeitar</button>` : ""}
-                    <button class="btn-delete" type="button" data-action="delete" data-id="${report.id}">Excluir</button>
+                    <button class="btn-view" type="button" data-action="view" data-id="${escapeAttribute(report.id)}">Ver</button>
+                    ${report.status !== "Aprovado" ? `<button class="btn-approve" type="button" data-action="approve" data-id="${escapeAttribute(report.id)}">Aprovar</button>` : ""}
+                    ${report.status !== "Rejeitado" ? `<button class="btn-reject" type="button" data-action="reject" data-id="${escapeAttribute(report.id)}">Rejeitar</button>` : ""}
+                    <button class="btn-delete" type="button" data-action="delete" data-id="${escapeAttribute(report.id)}">Excluir</button>
                 </div>
             </td>
         </tr>
@@ -345,7 +345,7 @@ function renderPartnerList() {
         <article class="admin-partner-card">
             <div>
                 <strong>${escapeHtml(partner.name)}</strong>
-                <p>${escapeHtml(partner.region)} • ${escapeHtml(partner.status)}</p>
+                <p>${escapeHtml(partner.region)} - ${escapeHtml(partner.status)}</p>
                 <small>${escapeHtml(partner.note || "Sem nota interna.")}</small>
             </div>
             <button type="button" class="btn-delete" data-delete-partner="${escapeAttribute(partner.id)}">Remover</button>
@@ -359,13 +359,13 @@ function renderActivityLists() {
 
     renderSimpleActivity("recentReportsList", recentReports.map((report) => ({
         title: report.playerName,
-        body: `${report.server} • ${report.status}`,
+        body: `${report.server} - ${report.status}`,
         meta: formatDate(report.createdAt)
-    })), "Sem denúncias recentes.");
+    })), "Sem denuncias recentes.");
 
     renderSimpleActivity("recentUsersList", recentUsers.map((user) => ({
         title: user.name,
-        body: `${user.role === "owner" ? "Dono de servidor" : "Jogador"}${user.serverName ? ` • ${user.serverName}` : ""}`,
+        body: `${user.role === "owner" ? "Dono de servidor" : "Jogador"}${user.serverName ? ` - ${user.serverName}` : ""}`,
         meta: formatDate(user.createdAt)
     })), "Sem contas recentes.");
 }
@@ -378,7 +378,7 @@ function renderServerRisk() {
 
     const items = dashboardData?.moderation?.flaggedServers || [];
     if (items.length === 0) {
-        list.innerHTML = '<p class="admin-empty-state">Ainda não há volume suficiente para formar ranking.</p>';
+        list.innerHTML = '<p class="admin-empty-state">Ainda nao ha volume suficiente para formar ranking.</p>';
         return;
     }
 
@@ -386,7 +386,7 @@ function renderServerRisk() {
         <article class="admin-risk-card">
             <div>
                 <strong>${escapeHtml(item.server)}</strong>
-                <p>${item.totalCases} caso(s) • ${item.pendingCases} em análise</p>
+                <p>${item.totalCases} caso(s) - ${item.pendingCases} em analise</p>
             </div>
             <span class="risk-pill">${item.approvedCases} aprovados</span>
         </article>
@@ -425,7 +425,7 @@ function renderCharts() {
 }
 
 function renderMeta() {
-    setText("moderationMeta", `${adminReports.filter((report) => report.status === "Em análise").length} caso(s) aguardando ação`);
+    setText("moderationMeta", `${adminReports.filter((report) => report.status === "Em análise").length} caso(s) aguardando acao`);
     setText("accountsMeta", `${adminUsers.length} conta(s) cadastrada(s)`);
 }
 
@@ -443,15 +443,12 @@ async function handlePartnerSubmit(event) {
 
     const response = await safeFetchJson(ADMIN_API.partners, {
         method: "POST",
-        headers: {
-            ...jsonHeaders(),
-            ...adminHeaders()
-        },
+        headers: jsonHeaders(),
         body: JSON.stringify(payload)
     });
 
     if (!response?.ok) {
-        showFeedback(feedback, response?.error || "Não foi possível salvar o parceiro.", "error");
+        showFeedback(feedback, response?.error || "Nao foi possivel salvar o parceiro.", "error");
         return;
     }
 
@@ -463,10 +460,7 @@ async function handlePartnerSubmit(event) {
 async function updateStatus(id, status) {
     const response = await safeFetchJson(ADMIN_API.update, {
         method: "POST",
-        headers: {
-            ...jsonHeaders(),
-            ...adminHeaders()
-        },
+        headers: jsonHeaders(),
         body: JSON.stringify({ id, status })
     });
 
@@ -476,16 +470,13 @@ async function updateStatus(id, status) {
 }
 
 async function deleteReport(id) {
-    if (!window.confirm("Excluir permanentemente esta denúncia?")) {
+    if (!window.confirm("Excluir permanentemente esta denuncia?")) {
         return;
     }
 
     const response = await safeFetchJson(ADMIN_API.delete, {
         method: "POST",
-        headers: {
-            ...jsonHeaders(),
-            ...adminHeaders()
-        },
+        headers: jsonHeaders(),
         body: JSON.stringify({ id })
     });
 
@@ -510,7 +501,7 @@ function viewReportDetails(id) {
             <div class="details-hero">
                 ${buildAvatarMarkup(report, "details")}
                 <div class="details-heading">
-                    <p class="section-kicker">Resumo da denúncia</p>
+                    <p class="section-kicker">Resumo da denuncia</p>
                     <h2>${escapeHtml(report.playerName)}</h2>
                     <p class="modal-intro">Revise provas, origem, status e contexto completo do registro antes de decidir.</p>
                 </div>
@@ -535,7 +526,7 @@ function viewReportDetails(id) {
                 </div>
                 <div>
                     <dt>Conta autora</dt>
-                    <dd>${escapeHtml(report.reporterName || report.discord)}</dd>
+                    <dd>${escapeHtml(report.reporterName || report.discord || "Nao informada")}</dd>
                 </div>
                 <div>
                     <dt>Tipo da conta</dt>
@@ -543,7 +534,7 @@ function viewReportDetails(id) {
                 </div>
                 <div>
                     <dt>Servidor da conta</dt>
-                    <dd>${escapeHtml(report.reporterServerName || "Não informado")}</dd>
+                    <dd>${escapeHtml(report.reporterServerName || "Nao informado")}</dd>
                 </div>
                 <div>
                     <dt>Provas</dt>
@@ -705,7 +696,7 @@ function getStatusClass(status) {
 }
 
 function adminHeaders() {
-    return adminAuth ? { "x-admin-user": adminAuth.username, "x-admin-pass": adminAuth.password } : {};
+    return {};
 }
 
 function jsonHeaders() {

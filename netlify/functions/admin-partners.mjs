@@ -1,17 +1,17 @@
 import {
     createId,
     deletePartnerServerById,
-    isAdminAuthorized,
     jsonResponse,
     listPartnerServers,
     readJsonBody,
+    requireAdminSession,
     sanitize,
     savePartnerServer
 } from "./_shared/backend.mjs";
 
 export default async (request) => {
-    if (!isAdminAuthorized(request)) {
-        return jsonResponse({ error: "Não autorizado." }, 401);
+    if (!(await requireAdminSession(request))) {
+        return jsonResponse({ error: "Nao autorizado." }, 401);
     }
 
     if (request.method === "GET") {
@@ -26,7 +26,7 @@ export default async (request) => {
         const note = sanitize(body?.note);
 
         if (!name || !region) {
-            return jsonResponse({ error: "Informe nome e região do servidor parceiro." }, 400);
+            return jsonResponse({ error: "Informe nome e regiao do servidor parceiro." }, 400);
         }
 
         const partner = {

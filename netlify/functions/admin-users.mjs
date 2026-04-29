@@ -1,9 +1,9 @@
 import {
     jsonResponse,
-    isAdminAuthorized,
     listReports,
     listUsers,
-    publicUser
+    publicUser,
+    requireAdminSession
 } from "./_shared/backend.mjs";
 
 export default async (request) => {
@@ -11,8 +11,8 @@ export default async (request) => {
         return jsonResponse({ error: "Method Not Allowed" }, 405);
     }
 
-    if (!isAdminAuthorized(request)) {
-        return jsonResponse({ error: "Não autorizado." }, 401);
+    if (!(await requireAdminSession(request))) {
+        return jsonResponse({ error: "Nao autorizado." }, 401);
     }
 
     const [users, reports] = await Promise.all([listUsers(), listReports()]);

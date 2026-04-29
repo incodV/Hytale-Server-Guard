@@ -1,11 +1,11 @@
 import {
     jsonResponse,
-    isAdminAuthorized,
     listAnalytics,
     listPartnerServers,
     listReports,
     listUsers,
-    publicUser
+    publicUser,
+    requireAdminSession
 } from "./_shared/backend.mjs";
 
 export default async (request) => {
@@ -13,8 +13,8 @@ export default async (request) => {
         return jsonResponse({ error: "Method Not Allowed" }, 405);
     }
 
-    if (!isAdminAuthorized(request)) {
-        return jsonResponse({ error: "Não autorizado." }, 401);
+    if (!(await requireAdminSession(request))) {
+        return jsonResponse({ error: "Nao autorizado." }, 401);
     }
 
     const [reports, users, partners, analytics] = await Promise.all([
@@ -101,7 +101,7 @@ function buildServerRisk(reports) {
     const grouped = new Map();
 
     reports.forEach((report) => {
-        const serverName = String(report.server || "Servidor não informado").trim();
+        const serverName = String(report.server || "Servidor nao informado").trim();
         const current = grouped.get(serverName) || {
             server: serverName,
             totalCases: 0,

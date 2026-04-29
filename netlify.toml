@@ -26,6 +26,31 @@
   status = 200
 
 [[redirects]]
+  from = "/api/auth/logout"
+  to = "/.netlify/functions/auth-logout"
+  status = 200
+
+[[redirects]]
+  from = "/api/auth/admin/login"
+  to = "/.netlify/functions/auth-admin-login"
+  status = 200
+
+[[redirects]]
+  from = "/api/auth/admin/logout"
+  to = "/.netlify/functions/auth-admin-logout"
+  status = 200
+
+[[redirects]]
+  from = "/api/auth/admin/session"
+  to = "/.netlify/functions/auth-admin-session"
+  status = 200
+
+[[redirects]]
+  from = "/api/profile/update"
+  to = "/.netlify/functions/profile-update"
+  status = 200
+
+[[redirects]]
   from = "/api/reports/public"
   to = "/.netlify/functions/reports-public"
   status = 200

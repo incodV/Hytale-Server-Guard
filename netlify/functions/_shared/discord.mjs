@@ -13,38 +13,36 @@ const COLORS = {
     risk: 0xe08c3f
 };
 
+const INCLUDE_REPORTER_IDENTITY = String(process.env.DISCORD_INCLUDE_REPORTER_IDENTITY || "false").toLowerCase() === "true";
+
 export async function notifyCaseStatusChange({ request, report, previousStatus }) {
     if (!WEBHOOKS.status) {
-        return;
+        return skippedResult("status", "Webhook de status nao configurado.");
     }
 
     const statusKey = getStatusKey(report.status);
-    await executeWebhook(WEBHOOKS.status, {
+    return executeWebhook("status", WEBHOOKS.status, {
         username: "Hytale Server Guard",
         avatar_url: buildWebhookAvatar(request),
-        embeds: [{
-            author: {
-                name: "Status de caso atualizado"
-            },
-            title: `${report.playerName} agora está como ${report.status}`,
-            color: COLORS[statusKey],
+        embeds: [buildBaseEmbed({
+            request,
+            report,
+            title: `${report.playerName} agora esta como ${report.status}`,
+            author: "Status de caso atualizado",
             description: shorten(report.reason, 260),
-            thumbnail: report.avatarUrl ? { url: absoluteUrl(request, report.avatarUrl) } : undefined,
+            color: COLORS[statusKey],
             fields: compactFields([
-                inlineField("Status anterior", previousStatus || "Não informado"),
+                inlineField("Status anterior", previousStatus || "Nao informado"),
                 inlineField("Status atual", report.status),
                 inlineField("Servidor", report.server),
                 inlineField("UUID", report.uuid || "N/A"),
-                inlineField("Denunciante", report.reporterName || report.discord || "Não informado"),
-                inlineField("Conta", report.reporterRole === "owner" ? `Dono • ${report.reporterServerName || "Sem servidor"}` : "Jogador"),
+                includeReporterFields(report, true),
                 fullField("Provas", formatProofLinks(report.proofLinks)),
                 fullField("Caso", buildCaseMeta(report))
             ]),
-            footer: {
-                text: `Caso ${report.id}`
-            },
+            footer: `Caso ${report.id}`,
             timestamp: report.updatedAt || report.createdAt
-        }],
+        })],
         allowed_mentions: {
             parse: []
         }
@@ -53,33 +51,30 @@ export async function notifyCaseStatusChange({ request, report, previousStatus }
 
 export async function notifyApprovedCase({ request, report }) {
     if (!WEBHOOKS.approved) {
-        return;
+        return skippedResult("approved", "Webhook de aprovados nao configurado.");
     }
 
-    await executeWebhook(WEBHOOKS.approved, {
+    return executeWebhook("approved", WEBHOOKS.approved, {
         username: "Hytale Server Guard",
         avatar_url: buildWebhookAvatar(request),
-        embeds: [{
-            author: {
-                name: "Caso aprovado na base pública"
-            },
+        embeds: [buildBaseEmbed({
+            request,
+            report,
             title: report.playerName,
-            url: resolvePublicUrl(request),
-            color: COLORS.approved,
+            author: "Caso aprovado na base publica",
             description: shorten(report.reason, 320),
-            thumbnail: report.avatarUrl ? { url: absoluteUrl(request, report.avatarUrl) } : undefined,
+            color: COLORS.approved,
+            url: resolvePublicUrl(request),
             fields: compactFields([
                 inlineField("Servidor", report.server),
                 inlineField("UUID", report.uuid || "N/A"),
-                inlineField("Denunciante", report.reporterName || report.discord || "Não informado"),
+                includeReporterFields(report, false),
                 fullField("Provas", formatProofLinks(report.proofLinks)),
-                fullField("Origem", report.reporterServerName ? `${report.reporterName || "Conta"} • ${report.reporterServerName}` : (report.reporterName || report.discord || "Não informado"))
+                fullField("Publicacao", "Registro aprovado pela moderacao e enviado para a base publica.")
             ]),
-            footer: {
-                text: "Registro aprovado pela moderação"
-            },
+            footer: "Registro aprovado pela moderacao",
             timestamp: report.updatedAt || report.createdAt
-        }],
+        })],
         allowed_mentions: {
             parse: []
         }
@@ -88,25 +83,24 @@ export async function notifyApprovedCase({ request, report }) {
 
 export async function notifyRiskAlert({ request, report, reports }) {
     if (!WEBHOOKS.risk) {
-        return;
+        return skippedResult("risk", "Webhook de risco nao configurado.");
     }
 
     const alert = buildRiskAlert(report, reports);
     if (!alert) {
-        return;
+        return skippedResult("risk", "Nenhum criterio de risco acionado para este caso.");
     }
 
-    await executeWebhook(WEBHOOKS.risk, {
+    return executeWebhook("risk", WEBHOOKS.risk, {
         username: "Hytale Server Guard",
         avatar_url: buildWebhookAvatar(request),
-        embeds: [{
-            author: {
-                name: "Alerta de risco detectado"
-            },
+        embeds: [buildBaseEmbed({
+            request,
+            report,
             title: alert.title,
-            color: COLORS.risk,
+            author: "Alerta de risco detectado",
             description: alert.description,
-            thumbnail: report.avatarUrl ? { url: absoluteUrl(request, report.avatarUrl) } : undefined,
+            color: COLORS.risk,
             fields: compactFields([
                 inlineField("Jogador", report.playerName),
                 inlineField("Servidor", report.server),
@@ -114,33 +108,100 @@ export async function notifyRiskAlert({ request, report, reports }) {
                 fullField("Contexto", alert.context),
                 fullField("Provas do novo caso", formatProofLinks(report.proofLinks))
             ]),
-            footer: {
-                text: `Caso ${report.id} • revisão recomendada`
-            },
+            footer: `Caso ${report.id} • revisao recomendada`,
             timestamp: report.createdAt
-        }],
+        })],
         allowed_mentions: {
             parse: []
         }
     });
 }
 
-async function executeWebhook(url, payload) {
+async function executeWebhook(kind, url, payload) {
     if (!url) {
-        return;
+        return skippedResult(kind, "URL de webhook ausente.");
     }
 
     try {
-        await fetch(url, {
+        const response = await fetch(url, {
             method: "POST",
             headers: {
                 "content-type": "application/json"
             },
             body: JSON.stringify(payload)
         });
+
+        if (!response.ok) {
+            const body = await safeReadText(response);
+            console.error(`[discord:${kind}] webhook falhou`, {
+                status: response.status,
+                body
+            });
+
+            return {
+                ok: false,
+                skipped: false,
+                channel: kind,
+                status: response.status,
+                error: body || `Falha HTTP ${response.status}`
+            };
+        }
+
+        return {
+            ok: true,
+            skipped: false,
+            channel: kind,
+            status: response.status
+        };
     } catch (error) {
-        console.error("Discord webhook error:", error.message);
+        console.error(`[discord:${kind}] erro ao enviar webhook`, error?.message || error);
+        return {
+            ok: false,
+            skipped: false,
+            channel: kind,
+            status: 0,
+            error: error?.message || "Erro desconhecido ao enviar webhook."
+        };
     }
+}
+
+function buildBaseEmbed({ request, report, title, author, description, color, fields, footer, timestamp, url }) {
+    return {
+        author: {
+            name: author,
+            url: resolvePublicUrl(request)
+        },
+        title,
+        url,
+        color,
+        description,
+        thumbnail: report.avatarUrl ? { url: absoluteUrl(request, report.avatarUrl) } : undefined,
+        fields,
+        footer: {
+            text: footer
+        },
+        timestamp
+    };
+}
+
+function includeReporterFields(report, allowIdentity) {
+    if (!allowIdentity || !INCLUDE_REPORTER_IDENTITY) {
+        return inlineField("Origem", "Identidade protegida na automacao do Discord");
+    }
+
+    return [
+        inlineField("Denunciante", report.reporterName || report.discord || "Nao informado"),
+        inlineField("Conta", report.reporterRole === "owner" ? `Dono • ${report.reporterServerName || "Sem servidor"}` : "Jogador")
+    ];
+}
+
+function skippedResult(channel, reason) {
+    return {
+        ok: true,
+        skipped: true,
+        channel,
+        reason
+    };
 }
 
 function buildRiskAlert(report, reports) {
@@ -155,15 +216,15 @@ function buildRiskAlert(report, reports) {
     if (samePlayer.length >= 2) {
         return {
             title: `Jogador recorrente: ${report.playerName}`,
-            description: `Esse jogador já apareceu ${samePlayer.length} vez(es) na base e merece revisão mais rígida.`,
-            context: `Servidor atual: ${report.server}\nCasos do mesmo jogador: ${samePlayer.length}\nÚltimo registro: ${formatDateTime(report.createdAt)}`
+            description: `Esse jogador ja apareceu ${samePlayer.length} vez(es) na base e merece revisao mais rigida.`,
+            context: `Servidor atual: ${report.server}\nCasos do mesmo jogador: ${samePlayer.length}\nUltimo registro: ${formatDateTime(report.createdAt)}`
         };
     }
 
     if (sameServerRecent.length >= 3) {
         return {
             title: `Volume anormal em ${report.server}`,
-            description: `${sameServerRecent.length} denúncias foram registradas para esse servidor nas últimas 24 horas.`,
+            description: `${sameServerRecent.length} denuncias foram registradas para esse servidor nas ultimas 24 horas.`,
             context: `Casos totais do servidor: ${sameServer.length}\nCasos em 24h: ${sameServerRecent.length}\nNovo registro: ${report.playerName}`
         };
     }
@@ -194,7 +255,7 @@ function absoluteUrl(request, value) {
 }
 
 function buildWebhookAvatar(request) {
-    return absoluteUrl(request, "/logo.png");
+    return absoluteUrl(request, "/logo-sem-fundo.png");
 }
 
 function formatProofLinks(proofLinks) {
@@ -244,13 +305,13 @@ function shorten(value, limit) {
 }
 
 function compactFields(fields) {
-    return fields.filter(Boolean).slice(0, 25);
+    return fields.flat().filter(Boolean).slice(0, 25);
 }
 
 function inlineField(name, value) {
     return {
         name,
-        value: sanitize(value) || "Não informado",
+        value: sanitize(value) || "Nao informado",
         inline: true
     };
 }
@@ -258,7 +319,7 @@ function inlineField(name, value) {
 function fullField(name, value) {
     return {
         name,
-        value: sanitize(value) || "Não informado",
+        value: sanitize(value) || "Nao informado",
         inline: false
     };
 }
@@ -298,4 +359,12 @@ function formatDateTime(value) {
         hour: "2-digit",
         minute: "2-digit"
     });
+}
+
+async function safeReadText(response) {
+    try {
+        return await response.text();
+    } catch (error) {
+        return "";
+    }
 }

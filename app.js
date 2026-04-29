@@ -17,9 +17,7 @@ const API = {
     reportsMine: "/api/reports/mine",
     authRegister: "/api/auth/register",
     authLogin: "/api/auth/login",
-    adminReports: "/api/reports/admin",
-    adminUpdate: "/api/reports/admin/update",
-    adminDelete: "/api/reports/admin/delete"
+    authLogout: "/api/auth/logout"
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -130,7 +128,7 @@ function updateHeaderState() {
 function updateHeroMetrics() {
     const approved = reports.filter((report) => report.status === "Aprovado").length;
     const pending = reports.filter((report) => report.status === "Em análise").length;
-    const members = new Set(reports.map((report) => report.reporterName).filter(Boolean)).size;
+    const members = currentUser ? 1 : 0;
 
     document.getElementById("heroApprovedCount").textContent = approved;
     document.getElementById("heroPendingCount").textContent = pending;
@@ -204,35 +202,24 @@ function renderAccountArea() {
         accountShell.innerHTML = `
             <div class="account-card">
                 <p class="account-empty">${escapeHtml(t("account_no_session"))}</p>
+                <div class="account-actions">
+                    <button class="btn-secondary" id="accountGuestLoginBtn" type="button">${escapeHtml(t("account_login_create"))}</button>
+                </div>
             </div>
         `;
+        bindIfExists("accountGuestLoginBtn", "click", () => openModal("accountModal"));
         return;
     }
 
     accountShell.innerHTML = `
-        <div class="account-grid">
-            <div class="account-card">
-                <div class="account-meta">
-                    <p class="section-kicker">${escapeHtml(t("profile_kicker"))}</p>
-                    <h3>${escapeHtml(currentUser.name)}</h3>
-                    <p>${escapeHtml(t("field_email"))}: ${escapeHtml(currentUser.email)}</p>
-                    <p>${escapeHtml(t("profile_type"))}: ${escapeHtml(currentUser.role === "owner" ? t("role_owner") : t("role_player"))}</p>
-                    <p>${currentUser.serverName ? `${escapeHtml(t("field_server_name"))}: ${escapeHtml(currentUser.serverName)}` : escapeHtml(t("profile_no_server"))}</p>
-                    <div class="account-actions">
-                        <button class="btn-secondary" id="openProfileBtn" type="button">${escapeHtml(t("profile_open"))}</button>
-                        <button class="btn-login" id="logoutUserBtn" type="button">${escapeHtml(t("account_logout"))}</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="account-card">
-                <div class="account-reports-head">
-                    <p class="section-kicker">${escapeHtml(t("my_reports_kicker"))}</p>
-                    <h3>${escapeHtml(t("my_reports_title"))}</h3>
-                    <p id="myReportsMeta">${escapeHtml(t("account_home_summary"))}</p>
-                </div>
-                <div class="my-reports-list" id="myReportsList">
-                    <p class="account-empty">${escapeHtml(t("loading"))}</p>
+        <div class="account-card account-card-compact">
+            <div class="account-meta">
+                <p class="section-kicker">${escapeHtml(t("profile_kicker"))}</p>
+                <h3>${escapeHtml(currentUser.name)}</h3>
+                <p>${escapeHtml(t("account_home_summary"))}</p>
+                <div class="account-actions">
+                    <button class="btn-secondary" id="openProfileBtn" type="button">${escapeHtml(t("profile_open"))}</button>
+                    <button class="btn-login" id="logoutUserBtn" type="button">${escapeHtml(t("account_logout"))}</button>
                 </div>
             </div>
         </div>
@@ -240,63 +227,6 @@ function renderAccountArea() {
 
     bindIfExists("openProfileBtn", "click", openProfilePage);
     bindIfExists("logoutUserBtn", "click", logoutUser);
-    loadMyReports();
-}
-
-async function loadMyReports() {
-    const meta = document.getElementById("myReportsMeta");
-    const list = document.getElementById("myReportsList");
-
-    if (!meta || !list || !currentUser || !userSessionToken) {
-        return;
-    }
-
-    if (!canUseBackend()) {
-        meta.textContent = t("my_reports_none_meta");
-        list.innerHTML = `<p class="account-empty">${escapeHtml(t("my_reports_none_text"))}</p>`;
-        return;
-    }
-
-    meta.textContent = t("updating");
-    const response = await safeFetchJson(API.reportsMine, {
-        headers: authHeaders()
-    });
-
-    if (!response?.ok) {
-        meta.textContent = t("my_reports_error_meta");
-        list.innerHTML = `<p class="account-empty">${escapeHtml(t("try_again_later"))}</p>`;
-        return;
-    }
-
-    const myReports = normalizeReports(response.reports);
-    meta.textContent = t("my_reports_count").replace("{count}", myReports.length);
-
-    if (myReports.length === 0) {
-        list.innerHTML = `
-            <p class="account-empty">${escapeHtml(t("my_reports_empty"))}</p>
-            <button class="btn-secondary" id="openProfileFromEmptyBtn" type="button">${escapeHtml(t("profile_open"))}</button>
-        `;
-        bindIfExists("openProfileFromEmptyBtn", "click", openProfilePage);
-        return;
-    }
-
-    list.innerHTML = `
-        <article class="my-report-card">
-            <strong>${escapeHtml(t("profile_open"))}</strong>
-            <p>${escapeHtml(t("my_reports_count").replace("{count}", myReports.length))}</p>
-            <p>${escapeHtml(t("account_home_summary"))}</p>
-            <button class="btn-secondary" id="openProfileFromSummaryBtn" type="button">${escapeHtml(t("profile_open"))}</button>
-        </article>
-    ` + myReports.slice(0, 3).map((report) => `
-        <article class="my-report-card">
-            <strong>${escapeHtml(report.playerName)}</strong>
-            <p>${escapeHtml(t("table_status"))}: <span class="status-badge ${getStatusClass(report.status)}">${escapeHtml(getStatusLabel(report.status))}</span></p>
-            <p>${escapeHtml(t("table_server"))}: ${escapeHtml(report.server)}</p>
-            <p>${escapeHtml(t("table_date"))}: ${formatDate(report.createdAt)}</p>
-        </article>
-    `).join("");
-
-    bindIfExists("openProfileFromSummaryBtn", "click", openProfilePage);
 }
 
 function handleSearch(query) {
@@ -471,7 +401,8 @@ async function handleRegister(event) {
         email: sanitizeField(formData.get("email")),
         password: sanitizeField(formData.get("password")),
         role: sanitizeField(formData.get("role")),
-        serverName: sanitizeField(formData.get("serverName"))
+        serverName: sanitizeField(formData.get("serverName")),
+        hytaleNickname: sanitizeField(formData.get("hytaleNickname"))
     };
 
     const response = await safeFetchJson(API.authRegister, {
@@ -532,20 +463,18 @@ function persistUserSession(token, user) {
     localStorage.setItem(STORAGE_KEYS.userSession, JSON.stringify({ token, user }));
 }
 
-function logoutUser() {
+async function logoutUser() {
+    if (userSessionToken && canUseBackend()) {
+        await safeFetchJson(API.authLogout, {
+            method: "POST",
+            headers: authHeaders()
+        });
+    }
+
     currentUser = null;
     userSessionToken = "";
     localStorage.removeItem(STORAGE_KEYS.userSession);
-    refreshUI();
-}
-
-async function handleAdminLogin(event) {
-    event.preventDefault();
-    const feedback = document.getElementById("loginFeedback");
-    showFeedback(feedback, "Use a pagina administrativa dedicada para entrar no painel.", "success");
-    window.setTimeout(() => {
-        window.location.href = "admin.html";
-    }, 250);
+    await refreshUI();
 }
 
 function viewReportDetails(id) {
@@ -626,7 +555,6 @@ function setupEventListeners() {
         window.location.href = "admin.html";
     });
     bindIfExists("reportForm", "submit", submitReport);
-    bindIfExists("loginForm", "submit", handleAdminLogin);
     bindIfExists("registerForm", "submit", handleRegister);
     bindIfExists("userLoginForm", "submit", handleUserLogin);
 
@@ -831,10 +759,18 @@ async function toggleReportLike(reportId) {
         return;
     }
 
+    if (!currentUser || !userSessionToken) {
+        openModal("accountModal");
+        return;
+    }
+
     if (canUseBackend()) {
         const response = await safeFetchJson(API.reportsLike, {
             method: "POST",
-            headers: jsonHeaders(),
+            headers: {
+                ...jsonHeaders(),
+                ...authHeaders()
+            },
             body: JSON.stringify({ id: reportId })
         });
 

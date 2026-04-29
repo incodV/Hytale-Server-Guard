@@ -1,12 +1,12 @@
-import { isAdminAuthorized, jsonResponse, listReports } from "./_shared/backend.mjs";
+import { jsonResponse, listReports, requireAdminSession } from "./_shared/backend.mjs";
 
 export default async (request) => {
     if (request.method !== "GET") {
         return jsonResponse({ error: "Method Not Allowed" }, 405);
     }
 
-    if (!isAdminAuthorized(request)) {
-        return jsonResponse({ error: "Não autorizado." }, 401);
+    if (!(await requireAdminSession(request))) {
+        return jsonResponse({ error: "Nao autorizado." }, 401);
     }
 
     return jsonResponse({

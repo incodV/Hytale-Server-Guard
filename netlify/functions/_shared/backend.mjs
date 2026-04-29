@@ -1,8 +1,10 @@
 import { getStore } from "@netlify/blobs";
 import crypto from "node:crypto";
 
-export const ADMIN_USERNAME = process.env.HSG_ADMIN_USERNAME || "wonerGard";
-export const ADMIN_PASSWORD = process.env.HSG_ADMIN_PASSWORD || "admin123";
+export const ADMIN_USERNAME = sanitize(process.env.HSG_ADMIN_USERNAME);
+export const ADMIN_PASSWORD = sanitize(process.env.HSG_ADMIN_PASSWORD);
+const ADMIN_SESSION_COOKIE = "hsg_admin_session";
+const ADMIN_SESSION_TTL_SECONDS = 60 * 60 * 8;
 
 export function jsonResponse(payload, status = 200) {
     return new Response(JSON.stringify(payload), {
@@ -92,6 +94,16 @@ export async function getUserFromToken(request) {
     return null;
 }
 
+export async function clearUserSession(user) {
+    if (!user) {
+        return;
+    }
+
+    user.sessionToken = "";
+    user.sessionUpdatedAt = new Date().toISOString();
+    await saveUser(user);
+}
+
 export async function listReports() {
     const { blobs } = await getReportsStore().list();
     const reports = [];
@@ -173,10 +185,74 @@ export async function listAnalytics() {
     return metrics.sort((a, b) => new Date(a.date) - new Date(b.date));
 }
 
-export function isAdminAuthorized(request) {
-    const username = sanitize(request.headers.get("x-admin-user"));
-    const password = sanitize(request.headers.get("x-admin-pass"));
-    return username === ADMIN_USERNAME && password === ADMIN_PASSWORD;
+export function hasConfiguredAdminCredentials() {
+    return Boolean(ADMIN_USERNAME && ADMIN_PASSWORD);
+}
+
+export function verifyAdminCredentials(username, password) {
+    if (!hasConfiguredAdminCredentials()) {
+        return false;
+    }
+
+    return sanitize(username) === ADMIN_USERNAME && sanitize(password) === ADMIN_PASSWORD;
+}
+
+export async function createAdminSession() {
+    const token = createToken();
+    const now = new Date();
+    const session = {
+        token,
+        username: ADMIN_USERNAME,
+        createdAt: now.toISOString(),
+        expiresAt: new Date(now.getTime() + ADMIN_SESSION_TTL_SECONDS * 1000).toISOString()
+    };
+
+    await getAdminSessionsStore().setJSON(adminSessionKey(token), session);
+    return session;
+}
+
+export async function getAdminSession(request) {
+    const token = getCookie(request, ADMIN_SESSION_COOKIE);
+    if (!token) {
+        return null;
+    }
+
+    const session = await getAdminSessionsStore().get(adminSessionKey(token), { type: "json" });
+    if (!session) {
+        return null;
+    }
+
+    if (new Date(session.expiresAt).getTime() <= Date.now()) {
+        await getAdminSessionsStore().delete(adminSessionKey(token));
+        return null;
+    }
+
+    return session;
+}
+
+export async function requireAdminSession(request) {
+    return getAdminSession(request);
+}
+
+export async function destroyAdminSession(request) {
+    const token = getCookie(request, ADMIN_SESSION_COOKIE);
+    if (!token) {
+        return;
+    }
+
+    await getAdminSessionsStore().delete(adminSessionKey(token));
+}
+
+export function buildAdminSessionCookie(token) {
+    const secure = process.env.URL && !String(process.env.URL).includes("http://localhost")
+        ? "; Secure"
+        : "";
+
+    return `${ADMIN_SESSION_COOKIE}=${token}; Max-Age=${ADMIN_SESSION_TTL_SECONDS}; Path=/; HttpOnly; SameSite=Lax${secure}`;
+}
+
+export function clearAdminSessionCookie() {
+    return `${ADMIN_SESSION_COOKIE}=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax`;
 }
 
 export function publicUser(user) {
@@ -190,6 +266,7 @@ export function publicUser(user) {
         email: user.email,
         role: user.role,
         serverName: user.serverName || "",
+        hytaleNickname: user.hytaleNickname || "",
         createdAt: user.createdAt
     };
 }
@@ -199,7 +276,6 @@ export function publicReport(report) {
         id: report.id,
         playerName: report.playerName,
         uuid: report.uuid,
-        discord: report.discord,
         server: report.server,
         reason: report.reason,
         proofLinks: report.proofLinks,
@@ -207,8 +283,6 @@ export function publicReport(report) {
         createdAt: report.createdAt,
         avatarUrl: report.avatarUrl || "",
         gotaleLookup: report.gotaleLookup || "",
-        reporterName: report.reporterName || "",
-        reporterRole: report.reporterRole || "player",
         likesCount: Number(report.likesCount || 0)
     };
 }
@@ -229,6 +303,10 @@ function analyticsKey(day) {
     return `analytics:${day}`;
 }
 
+function adminSessionKey(token) {
+    return `admin-session:${token}`;
+}
+
 function getUsersStore() {
     return getStore("hsg-users");
 }
@@ -245,6 +323,10 @@ function getAnalyticsStore() {
     return getStore("hsg-analytics");
 }
 
+function getAdminSessionsStore() {
+    return getStore("hsg-admin-sessions");
+}
+
 function extractBearerToken(request) {
     const authorization = request.headers.get("authorization") || "";
     if (!authorization.toLowerCase().startsWith("bearer ")) {
@@ -252,6 +334,13 @@ function extractBearerToken(request) {
     }
 
     return authorization.slice(7).trim();
+}
+
+function getCookie(request, name) {
+    const cookieHeader = request.headers.get("cookie") || "";
+    const cookies = cookieHeader.split(";").map((entry) => entry.trim()).filter(Boolean);
+    const match = cookies.find((entry) => entry.startsWith(`${name}=`));
+    return match ? match.slice(name.length + 1) : "";
 }
 
 function getDayKey() {

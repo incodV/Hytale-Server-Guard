@@ -58,7 +58,7 @@ export default async (request) => {
 
     await saveReport(report);
     const reports = await listReports();
-    await notifyRiskAlert({
+    const webhook = await notifyRiskAlert({
         request,
         report,
         reports
@@ -66,7 +66,10 @@ export default async (request) => {
 
     return jsonResponse({
         ok: true,
-        report
+        report,
+        webhook: {
+            risk: webhook || null
+        }
     });
 };
 
