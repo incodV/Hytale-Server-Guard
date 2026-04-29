@@ -4,7 +4,6 @@ let adminPartners = [];
 let dashboardData = null;
 let adminAuth = null;
 
-const ADMIN_STORAGE_KEY = "hytaleguard_admin_auth";
 const ADMIN_API = {
     reports: "/api/reports/admin",
     update: "/api/reports/admin/update",
@@ -15,24 +14,38 @@ const ADMIN_API = {
     analyticsTrack: "/api/analytics/track"
 };
 
-document.addEventListener("DOMContentLoaded", async () => {
-    loadAdminSession();
+document.addEventListener("DOMContentLoaded", () => {
+    clearLegacyAdminSession();
+    resetAdminShell();
     setupAdminEventListeners();
     trackVisit("admin");
+});
 
-    if (adminAuth) {
-        const valid = await validateAdminSession();
-        if (valid) {
-            await showDashboard();
-        }
+window.addEventListener("pageshow", () => {
+    if (!adminAuth) {
+        resetAdminShell();
     }
 });
 
-function loadAdminSession() {
+function clearLegacyAdminSession() {
     try {
-        adminAuth = JSON.parse(localStorage.getItem(ADMIN_STORAGE_KEY) || "null");
+        localStorage.removeItem("hytaleguard_admin_auth");
+        sessionStorage.removeItem("hytaleguard_admin_auth");
     } catch (error) {
-        adminAuth = null;
+        // no-op
+    }
+}
+
+function resetAdminShell() {
+    const dashboard = document.getElementById("adminDashboard");
+    const loginShell = document.getElementById("adminLoginShell");
+
+    if (dashboard) {
+        dashboard.hidden = true;
+    }
+
+    if (loginShell) {
+        loginShell.hidden = false;
     }
 }
 
@@ -133,12 +146,10 @@ async function handleAdminLogin(event) {
     const valid = await validateAdminSession();
     if (!valid) {
         adminAuth = null;
-        localStorage.removeItem(ADMIN_STORAGE_KEY);
         showFeedback(feedback, "Credenciais de administrador inválidas.", "error");
         return;
     }
 
-    localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(adminAuth));
     showFeedback(feedback, "Acesso administrativo liberado.", "success");
     await showDashboard();
 }
@@ -181,10 +192,12 @@ function logoutAdmin() {
     adminUsers = [];
     adminPartners = [];
     dashboardData = null;
-    localStorage.removeItem(ADMIN_STORAGE_KEY);
+    clearLegacyAdminSession();
 
     const dashboard = document.getElementById("adminDashboard");
     const loginShell = document.getElementById("adminLoginShell");
+    const form = document.getElementById("adminStandaloneLoginForm");
+    const feedback = document.getElementById("adminStandaloneFeedback");
 
     if (dashboard) {
         dashboard.hidden = true;
@@ -192,6 +205,16 @@ function logoutAdmin() {
 
     if (loginShell) {
         loginShell.hidden = false;
+    }
+
+    if (form) {
+        form.reset();
+    }
+
+    if (feedback) {
+        feedback.hidden = true;
+        feedback.textContent = "";
+        feedback.className = "form-feedback";
     }
 }
 

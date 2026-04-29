@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hytale-Server-Guard | Meu Perfil</title>
+    <meta name="description" content="Perfil da conta no Hytale-Server-Guard com dados da conta, denúncias enviadas e ações da sessão.">
+    <link rel="icon" type="image/png" href="logo-sem-fundo.png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="profile-page">
+    <header class="site-header">
+        <div class="container">
+            <nav>
+                <a href="index.html" class="logo">Hytale-Server-<span>Guard</span></a>
+                <div class="nav-actions">
+                    <a href="index.html" class="btn-login">Voltar ao Site</a>
+                    <button class="btn-ghost" id="profileLogoutBtn" type="button">Sair</button>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="profile-main">
+        <div class="container">
+            <section class="profile-hero">
+                <div class="profile-hero-copy">
+                    <p class="section-kicker">Conta</p>
+                    <h1>Meu Perfil</h1>
+                    <p>Acompanhe sua sessão, veja o resumo das denúncias enviadas e acesse sua identidade dentro da plataforma sem depender da home.</p>
+                </div>
+            </section>
+
+            <section id="profileShell" class="profile-shell">
+                <article class="profile-surface profile-guest-state">
+                    <h2>Carregando perfil...</h2>
+                    <p>Estamos verificando sua sessão atual.</p>
+                </article>
+            </section>
+        </div>
+    </main>
+
+    <script src="profile.js"></script>
+</body>
+</html>

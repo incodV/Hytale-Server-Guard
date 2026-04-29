@@ -105,19 +105,23 @@ function updateHeaderState() {
     const accountBtn = document.getElementById("accountBtn");
     const accountActionBtn = document.getElementById("accountActionBtn");
     const accountIntro = document.getElementById("accountIntro");
+    const logoutQuickBtn = document.getElementById("logoutQuickBtn");
 
     if (accountBtn) {
-        accountBtn.textContent = currentUser ? `${t("nav_account")}: ${currentUser.name}` : t("account_login_create");
+        accountBtn.textContent = currentUser ? t("profile_open") : t("account_login_create");
     }
 
     if (accountActionBtn) {
-        accountActionBtn.textContent = currentUser ? t("account_refresh") : t("account_create");
+        accountActionBtn.textContent = currentUser ? t("profile_open") : t("account_create");
+    }
+
+    if (logoutQuickBtn) {
+        logoutQuickBtn.hidden = !currentUser;
+        logoutQuickBtn.textContent = t("account_logout");
     }
 
     if (currentUser) {
-        accountIntro.textContent = currentUser.role === "owner"
-            ? t("account_intro_owner")
-            : t("account_intro_player");
+        accountIntro.textContent = t("account_home_summary");
     } else {
         accountIntro.textContent = t("account_intro_guest");
     }
@@ -215,7 +219,7 @@ function renderAccountArea() {
                     <p>${escapeHtml(t("profile_type"))}: ${escapeHtml(currentUser.role === "owner" ? t("role_owner") : t("role_player"))}</p>
                     <p>${currentUser.serverName ? `${escapeHtml(t("field_server_name"))}: ${escapeHtml(currentUser.serverName)}` : escapeHtml(t("profile_no_server"))}</p>
                     <div class="account-actions">
-                        <button class="btn-secondary" id="refreshMyReportsBtn" type="button">${escapeHtml(t("account_refresh"))}</button>
+                        <button class="btn-secondary" id="openProfileBtn" type="button">${escapeHtml(t("profile_open"))}</button>
                         <button class="btn-login" id="logoutUserBtn" type="button">${escapeHtml(t("account_logout"))}</button>
                     </div>
                 </div>
@@ -225,7 +229,7 @@ function renderAccountArea() {
                 <div class="account-reports-head">
                     <p class="section-kicker">${escapeHtml(t("my_reports_kicker"))}</p>
                     <h3>${escapeHtml(t("my_reports_title"))}</h3>
-                    <p id="myReportsMeta">${escapeHtml(t("loading_reports"))}</p>
+                    <p id="myReportsMeta">${escapeHtml(t("account_home_summary"))}</p>
                 </div>
                 <div class="my-reports-list" id="myReportsList">
                     <p class="account-empty">${escapeHtml(t("loading"))}</p>
@@ -234,7 +238,7 @@ function renderAccountArea() {
         </div>
     `;
 
-    bindIfExists("refreshMyReportsBtn", "click", loadMyReports);
+    bindIfExists("openProfileBtn", "click", openProfilePage);
     bindIfExists("logoutUserBtn", "click", logoutUser);
     loadMyReports();
 }
@@ -268,11 +272,22 @@ async function loadMyReports() {
     meta.textContent = t("my_reports_count").replace("{count}", myReports.length);
 
     if (myReports.length === 0) {
-        list.innerHTML = `<p class="account-empty">${escapeHtml(t("my_reports_empty"))}</p>`;
+        list.innerHTML = `
+            <p class="account-empty">${escapeHtml(t("my_reports_empty"))}</p>
+            <button class="btn-secondary" id="openProfileFromEmptyBtn" type="button">${escapeHtml(t("profile_open"))}</button>
+        `;
+        bindIfExists("openProfileFromEmptyBtn", "click", openProfilePage);
         return;
     }
 
-    list.innerHTML = myReports.map((report) => `
+    list.innerHTML = `
+        <article class="my-report-card">
+            <strong>${escapeHtml(t("profile_open"))}</strong>
+            <p>${escapeHtml(t("my_reports_count").replace("{count}", myReports.length))}</p>
+            <p>${escapeHtml(t("account_home_summary"))}</p>
+            <button class="btn-secondary" id="openProfileFromSummaryBtn" type="button">${escapeHtml(t("profile_open"))}</button>
+        </article>
+    ` + myReports.slice(0, 3).map((report) => `
         <article class="my-report-card">
             <strong>${escapeHtml(report.playerName)}</strong>
             <p>${escapeHtml(t("table_status"))}: <span class="status-badge ${getStatusClass(report.status)}">${escapeHtml(getStatusLabel(report.status))}</span></p>
@@ -280,6 +295,8 @@ async function loadMyReports() {
             <p>${escapeHtml(t("table_date"))}: ${formatDate(report.createdAt)}</p>
         </article>
     `).join("");
+
+    bindIfExists("openProfileFromSummaryBtn", "click", openProfilePage);
 }
 
 function handleSearch(query) {
@@ -524,32 +541,11 @@ function logoutUser() {
 
 async function handleAdminLogin(event) {
     event.preventDefault();
-    const formData = new FormData(event.target);
-    const username = sanitizeField(formData.get("username"));
-    const password = sanitizeField(formData.get("password"));
     const feedback = document.getElementById("loginFeedback");
-
-    if (!username || !password) {
-        showFeedback(feedback, t("feedback_admin_required"), "error");
-        return;
-    }
-
-    if (!canUseBackend()) {
-        showFeedback(feedback, t("feedback_admin_invalid"), "error");
-        return;
-    }
-
-    const response = await safeFetchJson(API.adminReports, {
-        headers: { "x-admin-user": username, "x-admin-pass": password }
-    });
-
-    if (!response?.ok) {
-        showFeedback(feedback, response?.error || t("feedback_admin_invalid"), "error");
-        return;
-    }
-
-    localStorage.setItem("hytaleguard_admin_auth", JSON.stringify({ username, password }));
-    window.location.href = "admin.html";
+    showFeedback(feedback, "Use a pagina administrativa dedicada para entrar no painel.", "success");
+    window.setTimeout(() => {
+        window.location.href = "admin.html";
+    }, 250);
 }
 
 function viewReportDetails(id) {
@@ -619,15 +615,15 @@ function setupEventListeners() {
     bindIfExists("searchInput", "input", (event) => handleSearch(event.target.value));
     bindIfExists("searchInput", "keydown", handleSearchEnter);
     bindIfExists("btnOpenReport", "click", () => openModal("reportModal"));
-    bindIfExists("accountBtn", "click", () => openModal("accountModal"));
-    bindIfExists("accountActionBtn", "click", () => currentUser ? loadMyReports() : openModal("accountModal"));
+    bindIfExists("accountBtn", "click", () => currentUser ? openProfilePage() : openModal("accountModal"));
+    bindIfExists("accountActionBtn", "click", () => currentUser ? openProfilePage() : openModal("accountModal"));
+    bindIfExists("logoutQuickBtn", "click", logoutUser);
     bindIfExists("openRegisterModalBtn", "click", () => {
         closeModal("accountModal");
         openModal("registerModal");
     });
     bindIfExists("openAdminLoginBtn", "click", () => {
-        closeModal("accountModal");
-        openModal("loginModal");
+        window.location.href = "admin.html";
     });
     bindIfExists("reportForm", "submit", submitReport);
     bindIfExists("loginForm", "submit", handleAdminLogin);
@@ -891,6 +887,10 @@ function updateReportInMemory(updatedReport) {
             likesCount: Number(updatedReport.likesCount || 0)
         };
     }
+}
+
+function openProfilePage() {
+    window.location.href = "profile.html";
 }
 
 function jsonHeaders() {
